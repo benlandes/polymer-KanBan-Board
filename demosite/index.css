@@ -1,0 +1,25 @@
+.board {
+    position:relative;
+    overflow-x:auto;
+    white-space: nowrap;
+	overflow-y:visible;
+}
+.board > .list {
+    display: inline-block;
+    width:300px;
+    margin-left:5px;
+    background-color:#f3e1bb;
+	vertical-align:top;
+	white-space: normal;
+}
+.taskList {
+	list-style-type:none;
+	min-height: 50px;
+	padding-left:20px;
+	padding-right:20px;
+	
+}
+.taskList  li{
+	display:block;
+	background-color:white;
+}
