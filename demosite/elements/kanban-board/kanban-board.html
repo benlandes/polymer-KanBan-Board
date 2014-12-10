@@ -1,0 +1,26 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
+
+<polymer-element name="kanban-board">
+  <template>
+    <h1>Test Element</h1>
+	 <core-ajax auto url="//gdata.youtube.com/feeds/api/videos/" 
+      params='{"alt":"json", "q":"chrome"}'
+      handleAs="json" on-core-response="{{ajaxResponse}}"></core-ajax>
+   
+
+  
+  <script>
+   
+  </script>
+  </template>
+  <script>
+    Polymer('kanban-board',{
+		ajaxResponse: function(event, response) {
+            console.log(response);
+        }
+    });
+	
+  
+  </script>
+</polymer-element>

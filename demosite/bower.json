@@ -1,0 +1,19 @@
+{
+  "name": "demosite",
+  "version": "0.0.0",
+  "authors": [
+    "Benjamin Landes <benjamin.landes@insitu.com>"
+  ],
+  "description": "Demo for kanban board",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.5.1"
+  }
+}

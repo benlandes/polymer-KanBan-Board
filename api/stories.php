@@ -164,6 +164,7 @@
 		if(isset($checkResult["error"])) return $checkResult;
 		
 		//Check parameters
+		$db = createDBConnection();
 		if($db->query("SELECT COUNT(*) FROM sprints WHERE id = ".
 			$db->quote($params["sprint_id"]))->fetchColumn() == 0)
 		{
@@ -176,27 +177,30 @@
 			setHeaderStatus(400);
 			return array("error"=>"No user exists for champion_id");
 		}
-		if($params["qa_champion_id"] != "" && $db->query("SELECT COUNT(*) FROM users ".
-			"WHERE id = ".$db->quote($params["qa_champion_id"]))->fetchColumn() == 0)
-		{
-			setHeaderStatus(400);
-			return array("error"=>"No user exists for qa_champion_id");
-		}
 		
 		//Add entry to database
 		$db = createDBConnection();
 		$id = uniqid();
-		$db->query("INSERT INTO entries (id, sprint_id, summary, story_points, ".
-					"qa_story_points, pbi_rank, description, state, champion_id, ".
-					"qa_champion_id) VALUES ('$id',".$db->quote($params["sprint_id"]).","
+		$db->query("INSERT INTO entries (id, sprint_id, summary, story_points, description".
+					", state, champion_id VALUES ('$id',".$db->quote($params["sprint_id"]).","
 					$db->quote($params["summary"]).",".intval($params["story_points"]).",".
-					intval($params["qa_story_points"]).",".intval($params["pbi_rank"]).",".
 					$db->quote($params["description"]).",".intval($params["state"]).",".
-					$db->quote($params["champion_id"]).",".
-					$db->quote($params["qa_champion_id"]).")");
+					$db->quote($params["champion_id"]).")");
 					
 		//return create success
 		return array("status" => "Entry Created", "id" => $id);
+	}
+	
+	//Updates order of story
+	function updateStoryOrder(sprint_id,story_id,order){
+		//Get content from database
+		$db = createDBConnection();
+		$queryResult = $db->query("SELECT sprint_id, order, story_points, ".
+									"qa_story_points, pbi_rank, description, state, ".
+									"champion_id, qa_champion_id FROM stories");
+		
+		//Return results
+		$result = $queryResult->fetchAll(PDO::FETCH_ASSOC);
 	}
 	
 	//Updates a blog entry

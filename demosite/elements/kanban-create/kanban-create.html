@@ -1,0 +1,96 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-input/paper-autogrow-textarea.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input-decorator.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/core-collapse/core-collapse.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/core-menu/core-menu.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
+
+<polymer-element name="kanban-create">
+  <template>
+	<style>
+		paper-input {
+		  width: 80%;
+		}
+		paper-input-decorator {
+		  max-width: 80%;
+		}
+		paper-button[raised] {
+		  background: #4285f4;
+		  color: #fff;
+		}
+	</style>
+    <h1>Create Element</h1>
+	 <core-ajax 
+		id="ajax" 
+		url="//gdata.youtube.com/feeds/api/videos/" 
+		params='{"alt":"json", "q":"chrome"}'
+		handleAs="json"
+		method="POST"
+		on-core-response="{{ajaxResponse}}"
+		></core-ajax>
+	<core-ajax
+          id="ajax" auto
+          url="http://api.kanbanboard.local/users.php"
+          response="{{usersResponse}}"
+		  handleAs="json"
+          ></core-ajax>
+	
+	<paper-input label="Summary" floatingLabel=true required></paper-input>
+	<br/>
+	
+	<paper-input-decorator label="Description" floatingLabel>
+      <paper-autogrow-textarea>
+        <textarea></textarea>
+      </paper-autogrow-textarea>
+    </paper-input-decorator>
+
+	<paper-input label="Story Points" validate="^[0-9]+$" error="Input     is not a number!" floatingLabel=true></paper-input>
+	<br/>
+	
+	<paper-dropdown-menu label="Select Assignee">
+		<paper-dropdown class="dropdown">
+			<core-menu class="menu">
+			<core-menu class="menu">
+				<template repeat="{{user in usersResponse}}">
+					<paper-item>{{user.first_name}} {{user.last_name}}</paper-item>
+				</template>
+			</core-menu>
+		</paper-dropdown>
+	</paper-dropdown-menu>
+	<br/> 
+	<br/>
+	
+
+
+
+	<paper-button on-click="{{submit}}" raised>Submit</paper-button>
+  
+  
+  </template>
+  <script>
+    Polymer('kanban-create',{
+		test:"Hello",
+		ready: function() {
+			//this.usersResponse = "Test";
+
+		},
+		ajaxResponse: function(event, response) {
+            console.log(response);
+        },
+		submit: function(){
+			/*var $d = this.shadowRoot.querySelectorAll('paper-input');
+			Array.prototype.forEach.call($d, function(d) {
+			  d.isInvalid = !d.validity.valid;
+			});*/
+			//this.$.ajax.go();
+		}
+    });
+	
+  
+  </script>
+</polymer-element>
