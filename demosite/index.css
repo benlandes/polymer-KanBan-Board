@@ -1,21 +1,16 @@
-.board {
+/*.board {
     position:relative;
 	clear:both;
-    /*overflow-x:auto;
-    white-space: nowrap;
-	overflow-y:visible*/
+
 }
 .boardTitle{
 	clear:both;
 }
 .board > .list {
-    /*display: inline-block;*/
 	float:left;
     width:300px;
     margin-left:5px;
     background-color:#f3e1bb;
-	/*vertical-align:top;*/
-	/*white-space: normal;*/
 }
 .taskList {
 	list-style-type:none;
@@ -32,3 +27,4 @@ h2
 {
 	margin-top:0px;
 }
+*/
