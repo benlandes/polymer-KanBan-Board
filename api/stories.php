@@ -1,4 +1,5 @@
 <?php
+
 	//Headers allow cross-domain ajax calls
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 	header("Access-Control-Allow-Origin: *");
@@ -156,10 +157,9 @@
 	//Creates a blog entry
 	function createStory($params)
 	{
+		
 		//Check required parameters
-		$required = array("summary", "sprint_id","story_points","qa_story_points",
-							"pbi_rank","description","state","champion_id",
-							"qa_champion_id");
+		$required = array("summary", "sprint_id","story_points","description","state","champion_id");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
@@ -177,12 +177,19 @@
 			setHeaderStatus(400);
 			return array("error"=>"No user exists for champion_id");
 		}
+		if($params["champion_id"] != "" && $db->query("SELECT COUNT(*) FROM states ".
+			"WHERE `column` = ".$db->quote($params["state"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"No state exists for state");
+		}
 		
 		//Add entry to database
 		$db = createDBConnection();
 		$id = uniqid();
-		$db->query("INSERT INTO entries (id, sprint_id, summary, story_points, description".
-					", state, champion_id VALUES ('$id',".$db->quote($params["sprint_id"]).","
+		
+		$db->query("INSERT INTO stories (id, sprint_id, summary, story_points, description".
+					", state, champion_id) VALUES ('$id',".$db->quote($params["sprint_id"]).",".
 					$db->quote($params["summary"]).",".intval($params["story_points"]).",".
 					$db->quote($params["description"]).",".intval($params["state"]).",".
 					$db->quote($params["champion_id"]).")");
@@ -192,7 +199,7 @@
 	}
 	
 	//Updates order of story
-	function updateStoryOrder(sprint_id,story_id,order){
+	function updateStoryOrder($sprintID,$storyID,$order){
 		//Get content from database
 		$db = createDBConnection();
 		$queryResult = $db->query("SELECT sprint_id, order, story_points, ".
