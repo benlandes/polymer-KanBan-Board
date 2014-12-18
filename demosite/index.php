@@ -1,7 +1,4 @@
-<?php
-//print("test");
 
-?>
 <!doctype html>
 <html>
 	<head>

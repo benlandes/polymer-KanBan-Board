@@ -3,6 +3,7 @@
 	//Headers allow cross-domain ajax calls
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 	header("Access-Control-Allow-Origin: *");
+	header("Content-Type: application/json");
 	
 	//MySQL Database Credentials
 	$SQL_DATABASE = "kanbanboard";
@@ -41,6 +42,10 @@
 		if(isset($_GET["id"]))
 		{
 			$returnValue = getStory($_GET);
+		}
+		else if(isset($_GET["sprint_id"]))
+		{
+			$returnValue = getBoard($_GET);
 		}
 		else
 		{
@@ -120,8 +125,7 @@
 		//Retrieve from database
 		$db = createDBConnection();
 		$queryResult = $db->query("SELECT id, sprint_id, summary, story_points, ".
-									"qa_story_points, pbi_rank, description, state, ".
-									"champion_id, qa_champion_id FROM stories ".
+									"description, state, champion_id FROM stories ".
 									"WHERE id = ".$db->quote($params["id"]));
 		
 		//Check if blog was not found
@@ -135,6 +139,52 @@
 		$result = $queryResult->fetch(PDO::FETCH_ASSOC);
 		return $result;
 	
+	}
+	function getBoard($params)
+	{
+		//Check required parameters
+		$required = array("sprint_id");
+		$checkResult = checkParams($params, $required);
+		if(isset($checkResult["error"])) return $checkResult;
+		
+		//Check parameters
+		$db = createDBConnection();
+		if($db->query("SELECT COUNT(*) FROM sprints WHERE id = ".
+			$db->quote($params["sprint_id"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"No sprint exists for that sprint_id");
+		}
+		
+		//Get states
+		$statesResult = $db->query("SELECT `column`, name FROM states ORDER BY `column` ASC");
+		$states = $statesResult->fetchAll(PDO::FETCH_ASSOC);
+		
+		//For each user
+		$db = createDBConnection();
+		$usersResult = $db->query("SELECT id, first_name, last_name FROM users");
+		$users = $usersResult->fetchAll(PDO::FETCH_ASSOC);
+		foreach($users as &$user)
+		{
+			$user["stories"] = array();
+		
+			//For each state
+			foreach($states as $state)
+			{
+
+				$storiesResult = $db->query("SELECT id, sprint_id, summary, story_points, ".
+									"description, state, champion_id FROM stories ".
+									"JOIN `order` on id = story_id WHERE ".
+									"champion_id = ".$db->quote($user["id"])." AND ".
+									"sprint_id = ".$db->quote($params["sprint_id"])." AND ".
+									"state = ".$db->quote($state["column"])." ".
+									"ORDER BY `order` ASC");
+				$stories = $storiesResult->fetchAll(PDO::FETCH_ASSOC);
+				$user["stories"][$state["name"]] = $stories;
+			}
+		}
+		
+		return array("users"=>$users);
 	}
 	
 	//Gets a list of blogs
@@ -193,21 +243,62 @@
 					$db->quote($params["summary"]).",".intval($params["story_points"]).",".
 					$db->quote($params["description"]).",".intval($params["state"]).",".
 					$db->quote($params["champion_id"]).")");
-					
+		
+		//Order of story will be last
+		updateStoryOrder($id, -1);
+		
 		//return create success
 		return array("status" => "Entry Created", "id" => $id);
 	}
 	
 	//Updates order of story
-	function updateStoryOrder($sprintID,$storyID,$order){
+	function updateStoryOrder($storyID,$order){
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT sprint_id, order, story_points, ".
-									"qa_story_points, pbi_rank, description, state, ".
-									"champion_id, qa_champion_id FROM stories");
 		
-		//Return results
-		$result = $queryResult->fetchAll(PDO::FETCH_ASSOC);
+		$storyResult = $db->query("SELECT sprint_id,champion_id, state FROM stories ".
+									"WHERE id = ".$db->quote($storyID));
+		if($storyResult->rowCount() == 0)
+		{
+			throw new Exception("No story exists for that id");
+		}
+		$updateStory = $storyResult->fetch(PDO::FETCH_ASSOC);
+		
+		//Delete previous order position
+		$db->query("DELETE from `order` WHERE story_id = ".$db->quote($storyID));
+		
+		//Query stories in same group
+		$queryResult = $db->query("SELECT story_id FROM stories JOIN `order` ON id = story_id ".
+									"WHERE sprint_id = ".$db->quote($updateStory["sprint_id"])." ".
+									"AND champion_id = ".$db->quote($updateStory["champion_id"])." ".
+									"AND state = ".$db->quote($updateStory["state"])." ".
+									"ORDER BY `order` ASC");
+				
+		//If no order is set story will be ordered last
+		$storyCount = $queryResult->rowCount();
+		if($order == -1)
+		{
+			$order = $storyCount;
+		}
+		
+		//Out of bounds
+		if($order > $storyCount) throw new Exception("Order out of bounds");
+		
+		//Insert story into existing order
+		$stories = $queryResult->fetchAll(PDO::FETCH_ASSOC);
+		array_splice( $stories, $order, 0, array(array("story_id"=>$storyID)));
+		
+		//Reorder stories
+		foreach($stories as $key=>$story){
+			//print("Key".$key);
+			//print_r($story);
+			//Delete previous order row
+			$db->query("DELETE from `order` WHERE story_id = ".$db->quote($story["story_id"]));
+			
+			//Create order row
+			//print("INSERT INTO `order` (story_id,`order`) VALUES (".$db->quote($story["story_id"]).",'$key')");
+			$db->query("INSERT INTO `order` (story_id,`order`) VALUES (".$db->quote($story["story_id"]).",'$key')");
+		}
 	}
 	
 	//Updates a blog entry

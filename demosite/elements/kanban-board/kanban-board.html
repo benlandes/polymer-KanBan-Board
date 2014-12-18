@@ -2,7 +2,6 @@
 <link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
 
 
-
 <polymer-element name="kanban-board">
   <template>
 	<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
@@ -19,6 +18,7 @@
 			<h1>To Do</h1>
 
 			<ol class="taskList">
+			
 				<li>
 					<h2>1234 - Title</h2>
 					<p>Schedule a meeting with Jim Miller to discuss concept and design</p>
@@ -100,29 +100,46 @@
 
 	</script>
 	</template>
+	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>	
 	<script>
 		Polymer('kanban-board',{
+			movingStoryHTML:null,
+			ready:function(){
+				//Track Start
+				/*Polymer.addEventListener(this.parentNode, "trackstart", function(event) {
+				  console.log("trackstart");
+				});*/
+				$(this.shadowRoot.querySelectorAll('li')).mousedown(function(){
+					movingStoryHTML = this;
+					$(this).hide();
+				});
+				$(this.shadowRoot.querySelectorAll('ol')).mouseup(function(){
+					
+					$(movingStoryHTML).show();
+				});
+				/*Polymer.addEventListener(this.shadowRoot.querySelector('.taskList li'), "trackstart", function(event) {
+				  console.log("trackstart");
+				  console.log(event);
+				  //event.srcElement.style.visibility="hidden";
+				  $(event.srcElement).remove();
+				});
+				Polymer.addEventListener(this.shadowRoot.querySelector('.board'), "track", function(event) {
+				  //console.log("track");
+				});
+				Polymer.addEventListener(this.shadowRoot.querySelector('.board'), "trackend", function(event) {
+				  //console.log("trackend");
+				});*/
+				/*this.shadowRoot.querySelector('.board').addEventListener('trackstart',function(e){
+					//console.log("trackstart");
+				});*/
+			},
+
 			ajaxResponse: function(event, response) {
 				console.log(response);
 			},
 			domReady:function(){
-				$( this.shadowRoot.querySelectorAll('.taskList')).sortable({
-				  connectWith: $( this.shadowRoot.querySelectorAll('.taskList')),
-				  helper: null
-				}).disableSelection();
-				$(".boardTitle").click(function(){
-					if($(this).next(".board").is(":visible") )
-					{
-						$(this).next(".board").hide(400);
-					}
-					else
-					{
-						$(this).next(".board").show(400);
-					}
-					
-				});
+			
 			}
 		});
 

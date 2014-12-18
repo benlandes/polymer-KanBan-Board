@@ -26,3 +26,7 @@ h2
 {
 	margin-top:0px;
 }
+
+/* Selection Disabled For Drag and Drop*/
+p::selection, h1::selection, h2::selection{ background: transparent }
+p::selection, h1::selection, h2::selection{ background: transparent }
