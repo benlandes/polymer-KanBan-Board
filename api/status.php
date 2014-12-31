@@ -18,12 +18,13 @@
 		return $db;
 	}
 	
-	print(json_encode(getUserList()));
-	function getUserList()
+	print(json_encode(getStatusList()));
+	
+	function getStatusList()
 	{
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, first_name, last_name FROM users");
+		$queryResult = $db->query("SELECT id, name FROM status ORDER BY `order` ASC");
 									
 		//Return no content header if empty
 		if($queryResult->rowCount() == 0) setHeaderStatus(204);

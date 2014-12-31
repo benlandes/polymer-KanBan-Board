@@ -9,7 +9,6 @@
 <link rel="import" href="../../bower_components/core-menu/core-menu.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
-<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 
 <polymer-element name="kanban-create">
   <template>
@@ -33,33 +32,27 @@
 	<paper-input label="Summary" floatingLabel=true value="{{summary}}" required></paper-input>
 	<br/>
 	
+	<paper-input label="Field 1" floatingLabel=true value="{{fields.one}}" required></paper-input>
+	<br/>
+	<paper-input label="Field 2" floatingLabel=true value="{{fields.two}}" required></paper-input>
+	<br/>
+	<paper-input label="Field 3" floatingLabel=true value="{{fields.three}}" required></paper-input>
+	<br/>
+	
 	<paper-input-decorator label="Description" floatingLabel>
       <paper-autogrow-textarea>
         <textarea value="{{description}}"></textarea>
       </paper-autogrow-textarea>
     </paper-input-decorator>
-	
-	<label>Percent Done</label>
-	<br/>
-	<paper-slider value={{percentDone}} editable></paper-slider>
+
+	<paper-input label="Story Points" value="{{storyPoints}}" validate="^[0-9]+$" error="Input is not a number!" floatingLabel=true></paper-input>
 	<br/>
 	
-	<paper-dropdown-menu label="Select Size">
+	<paper-dropdown-menu label="Select Assignee">
 		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedSize}}">
-				<template repeat="{{size in sizesResponse}}">
-					<paper-item label="{{size.value}}">{{size.value}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/>
-	
-	<paper-dropdown-menu label="Select Epic">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedEpic}}">
-				<template repeat="{{epic in epicsResponse}}">
-					<paper-item label="{{epic.id}}">{{epic.name}}</paper-item>
+			<core-menu class="menu" selectedItem="{{selectedUser}}">
+				<template repeat="{{user in usersResponse}}">
+					<paper-item label="{{user.id}}">{{user.first_name}} {{user.last_name}}</paper-item>
 				</template>
 			</core-menu>
 		</paper-dropdown>
@@ -87,25 +80,11 @@
 		</paper-dropdown>
 	</paper-dropdown-menu>
 	<br/> 
-	
-	<paper-dropdown-menu label="Select Status">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedStatus}}">
-				<template repeat="{{status in statusResponse}}">
-					<paper-item label="{{status.id}}" >{{status.name}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/> 
-	
 	<br/>
-	<p>{{percentDone}}</p>
 	<p>{{summary}}</p>
 	<p>{{description}}</p>
 	<p>{{storyPoints}}</p>
 	<p>{{selectedUser.attributes.label.textContent}}</p>
-	<p>{{selectedStatus.attributes.label.textContent}}</p>
 	<p>{{selectedSprint.attributes.label.textContent}}</p>
 	<p>{{selectedState.attributes.label.textContent}}</p>
 	
@@ -115,44 +94,18 @@
 	<!-- Create Story -->
 	 <core-ajax 
 		id="createRequest" 
-		url="http://api.kanbanboard.local/stories.php" 
+		url="http://api.kanbanboard.local/test.php" 
 		params='{"summary":"{{summary}}", 
 				"sprint_id":"{{selectedSprint.attributes.label.textContent}}",
-				"size":"{{selectedSize.attributes.label.textContent}}",
-				"description":"{{description}}",
+				"story_points":"{{storyPoints}}",
+				"fields":"{{fields}}",
 				"state":"{{selectedState.attributes.label.textContent}}",
-				"percent_done":"{{percentDone}}",
-				"status":"{{selectedStatus.attributes.label.textContent}}",
-				"epic_id":"{{selectedEpic.attributes.label.textContent}}"}'
+				"champion_id":"{{selectedUser.attributes.label.textContent}}"}'
 		handleAs="json"
 		method="POST"
 		on-core-response="{{ajaxResponse}}"
 		></core-ajax>
 		
-	<!-- Get Status List -->
-	<core-ajax
-          auto
-          url="http://api.kanbanboard.local/status.php"
-          response="{{statusResponse}}"
-		  handleAs="json"
-          ></core-ajax>
-		  
-    <!-- Get Size List -->
-	<core-ajax
-          auto
-          url="http://api.kanbanboard.local/sizes.php"
-          response="{{sizesResponse}}"
-		  handleAs="json"
-          ></core-ajax>
-		  
-	<!-- Get Epic List -->
-	<core-ajax
-          auto
-          url="http://api.kanbanboard.local/epics.php"
-          response="{{epicsResponse}}"
-		  handleAs="json"
-          ></core-ajax>
-		  
 	<!-- Get User List -->
 	<core-ajax
           auto

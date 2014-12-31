@@ -2,6 +2,7 @@
 	//Headers allow cross-domain ajax calls
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 	header("Access-Control-Allow-Origin: *");
+	header("Content-Type: application/json");
 	
 	//MySQL Database Credentials
 	$SQL_DATABASE = "kanbanboard";

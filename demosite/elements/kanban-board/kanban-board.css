@@ -1,24 +1,29 @@
-.board {
+.board 
+{
     position:relative;
 	clear:both;
 }
-.boardTitle{
+.boardTitle
+{
 	clear:both;
 }
-.board > .list {
+.board > .list 
+{
 	float:left;
     width:300px;
     margin-left:5px;
     background-color:#f3e1bb;
 }
-.taskList {
+.taskList 
+{
 	list-style-type:none;
 	min-height: 50px;
 	padding-left:20px;
 	padding-right:20px;
 	
 }
-.taskList  li{
+.taskList  li
+{
 	display:block;
 	background-color:white;
 }
@@ -28,5 +33,8 @@ h2
 }
 
 /* Selection Disabled For Drag and Drop*/
-p::selection, h1::selection, h2::selection{ background: transparent }
-p::selection, h1::selection, h2::selection{ background: transparent }
+p::selection, h1::selection, h2::selection, ol::selection, li::selection,
+.board::selection, .list::selection{
+	background: transparent 
+}
+

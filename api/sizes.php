@@ -18,12 +18,13 @@
 		return $db;
 	}
 	
-	print(json_encode(getUserList()));
-	function getUserList()
+	print(json_encode(getSizeList()));
+	
+	function getSizeList()
 	{
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, first_name, last_name FROM users");
+		$queryResult = $db->query("SELECT value FROM sizes");
 									
 		//Return no content header if empty
 		if($queryResult->rowCount() == 0) setHeaderStatus(204);

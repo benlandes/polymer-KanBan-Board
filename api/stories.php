@@ -160,31 +160,33 @@
 		$statesResult = $db->query("SELECT `column`, name FROM states ORDER BY `column` ASC");
 		$states = $statesResult->fetchAll(PDO::FETCH_ASSOC);
 		
-		//For each user
+		//For each epic
 		$db = createDBConnection();
-		$usersResult = $db->query("SELECT id, first_name, last_name FROM users");
-		$users = $usersResult->fetchAll(PDO::FETCH_ASSOC);
-		foreach($users as &$user)
+		$epicsResult = $db->query("SELECT id, name FROM epics");
+		$epics = $epicsResult->fetchAll(PDO::FETCH_ASSOC);
+		foreach($epics as &$epic)
 		{
-			$user["stories"] = array();
+			$epic["states"] = array();
 		
 			//For each state
 			foreach($states as $state)
-			{
-
-				$storiesResult = $db->query("SELECT id, sprint_id, summary, story_points, ".
-									"description, state, champion_id FROM stories ".
+			{	
+				$stateEntry = array();
+				$stateEntry["name"] = $state["name"];
+				$storiesResult = $db->query("SELECT id, sprint_id, epic_id, summary, size, ".
+									"description, state, percent_done, status FROM stories ".
 									"JOIN `order` on id = story_id WHERE ".
-									"champion_id = ".$db->quote($user["id"])." AND ".
+									"epic_id = ".$db->quote($epic["id"])." AND ".
 									"sprint_id = ".$db->quote($params["sprint_id"])." AND ".
 									"state = ".$db->quote($state["column"])." ".
 									"ORDER BY `order` ASC");
 				$stories = $storiesResult->fetchAll(PDO::FETCH_ASSOC);
-				$user["stories"][$state["name"]] = $stories;
+				$stateEntry["stories"] = $stories;
+				array_push($epic["states"],$stateEntry);
 			}
 		}
 		
-		return array("users"=>$users);
+		return array("epics"=>$epics);
 	}
 	
 	//Gets a list of blogs
@@ -209,40 +211,51 @@
 	{
 		
 		//Check required parameters
-		$required = array("summary", "sprint_id","story_points","description","state","champion_id");
+		$required = array("sprint_id","epic_id","state","size","summary", "description",
+						"percent_done","status");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
 		//Check parameters
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM sprints WHERE id = ".
-			$db->quote($params["sprint_id"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM epics WHERE id = ".
+			$db->quote($params["epic_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"No sprint exists for that sprint_id");
+			return array("error"=>"No epic exists for epic_id");
 		}
-		if($params["champion_id"] != "" && $db->query("SELECT COUNT(*) FROM users ".
-			"WHERE id = ".$db->quote($params["champion_id"]))->fetchColumn() == 0)
-		{
-			setHeaderStatus(400);
-			return array("error"=>"No user exists for champion_id");
-		}
-		if($params["champion_id"] != "" && $db->query("SELECT COUNT(*) FROM states ".
+		
+		if($db->query("SELECT COUNT(*) FROM states ".
 			"WHERE `column` = ".$db->quote($params["state"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
 			return array("error"=>"No state exists for state");
 		}
 		
+		if($db->query("SELECT COUNT(*) FROM status ".
+			"WHERE id = ".$db->quote($params["status"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"Incorrect value for status parameter");
+		}
+		
+		if($db->query("SELECT COUNT(*) FROM sizes ".
+			"WHERE value = ".$db->quote($params["size"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"Incorrect value for size parameter");
+		}
+		
 		//Add entry to database
 		$db = createDBConnection();
 		$id = uniqid();
 		
-		$db->query("INSERT INTO stories (id, sprint_id, summary, story_points, description".
-					", state, champion_id) VALUES ('$id',".$db->quote($params["sprint_id"]).",".
-					$db->quote($params["summary"]).",".intval($params["story_points"]).",".
+		$db->query("INSERT INTO stories (id, epic_id, summary, size, description".
+					", state, percent_done, sprint_id, status) VALUES ('$id',".$db->quote($params["epic_id"]).",".
+					$db->quote($params["summary"]).",".$db->quote($params["size"]).",".
 					$db->quote($params["description"]).",".intval($params["state"]).",".
-					$db->quote($params["champion_id"]).")");
+					$db->quote($params["percent_done"]).",".$db->quote($params["sprint_id"]).",".
+					$db->quote($params["status"]).")");
 		
 		//Order of story will be last
 		updateStoryOrder($id, -1);
@@ -256,7 +269,7 @@
 		//Get content from database
 		$db = createDBConnection();
 		
-		$storyResult = $db->query("SELECT sprint_id,champion_id, state FROM stories ".
+		$storyResult = $db->query("SELECT epic_id,sprint_id, state FROM stories ".
 									"WHERE id = ".$db->quote($storyID));
 		if($storyResult->rowCount() == 0)
 		{
@@ -270,7 +283,7 @@
 		//Query stories in same group
 		$queryResult = $db->query("SELECT story_id FROM stories JOIN `order` ON id = story_id ".
 									"WHERE sprint_id = ".$db->quote($updateStory["sprint_id"])." ".
-									"AND champion_id = ".$db->quote($updateStory["champion_id"])." ".
+									"AND epic_id = ".$db->quote($updateStory["epic_id"])." ".
 									"AND state = ".$db->quote($updateStory["state"])." ".
 									"ORDER BY `order` ASC");
 				
@@ -304,18 +317,28 @@
 	//Updates a blog entry
 	function editStory($params)
 	{
-		/*
 		//Check required parameters
-		$required = array("id", "title", "body");
+		$required = array("id");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
-		//Check if entry exists
+		//Check against optional fields
+		$optional = array("sprint_id","epic_id","state","size","summary", "description",
+				"percent_done","status");
+		foreach($params as $key => $value)
+		{
+			if(in_array($key,$optional) === false)
+			{
+				throw new Exception("No story exists for that id");
+			}
+		}
+		
+		//Check if story exists
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM entries WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(404);
-			return array("error"=>"No entry exists for that id");
+			return array("error"=>"No story exists for that id");
 		}
 		
 		//Update Entry
@@ -323,7 +346,6 @@
 		
 		//return update success
 		return array("status" => "Entry Updated");
-		*/
 	}
 	
 	//Deletes a blog entry

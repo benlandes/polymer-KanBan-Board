@@ -1,100 +1,45 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="../../bower_components/core-drag-drop/core-drag-drop.html">
 
 
 <polymer-element name="kanban-board">
   <template>
-	<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
 	<link rel="stylesheet" type="text/css" href="kanban-board.css">
-	
 
-	
-	
-	
     <h1>KanBan Board</h1>
-	<h2 class="boardTitle">Ben Landes</h2>
-	<div class="board">
-		<div class="list">
-			<h1>To Do</h1>
-
-			<ol class="taskList">
-			
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Schedule a meeting with Jim Miller to discuss concept and design</p>
-				</li>
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Follow the link to design and implement the Code Project KanBan board with any modifications described by Jim</p>
-				</li>
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Convert this example to use Polymer</p>
-				</li>
-				<li>Item 3</li>
-			</ol>
+	
+	
+	<template repeat="{{epic in epicStoriesResponse.epics}}">
+		<h2 class="boardTitle">{{epic.name}}</h2>
+		<div class="board">
+			<template repeat="{{state in epic.states}}">
+				<div class="list">
+					<h1>{{state.name}}</h1>
+					<ol class="taskList" data-state="{{state.id}}" data-epic="{{epic.id}}">
+						<template repeat="{{story in state.stories}}">
+							<li>
+								<core-drag-drop></core-drag-drop>
+								<h2>{{story.summary}}</h2>
+								<p>{{story.description}}</p>
+							</li>
+						</template>
+					</ol>
+				</div>
+			</template>
 		</div>
-		<div class="list">
-			<h1>In Progress</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-		<div class="list">
-			<h1>Test</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-		<div class="list">
-			<h1>Done</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-	</div>
-	<h2 class="boardTitle">Aaron High</h2>
-	<div class="board">
-		<div class="list">
-			<h1>To Do</h1>
-
-			<ol class="taskList">
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Schedule a meeting with Jim Miller to discuss concept and design</p>
-				</li>
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Follow the link to design and implement the Code Project KanBan board with any modifications described by Jim</p>
-				</li>
-				<li>
-					<h2>1234 - Title</h2>
-					<p>Convert this example to use Polymer</p>
-				</li>
-				<li>Item 3</li>
-			</ol>
-		</div>
-		<div class="list">
-			<h1>In Progress</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-		<div class="list">
-			<h1>Test</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-		<div class="list">
-			<h1>Done</h1>
-			<ol class="taskList">
-				<li>Item 1</li>
-			</ol>
-		</div>
-	</div>
-   
-
+	</template>
+	
+	<!-- Get Board -->
+	<core-ajax
+		  id = "getBoard"
+          auto
+          url="http://api.kanbanboard.local/stories.php"
+          response="{{epicStoriesResponse}}"
+		  params='{"sprint_id":"a"}'
+		  handleAs="json"
+		  on-core-response="{{boardUpdateResponse}}"
+          ></core-ajax>
   
 	<script>
 
@@ -103,26 +48,37 @@
 	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script>
+		function collectionHas(a, b) { //helper function (see below)
+			for(var i = 0, len = a.length; i < len; i ++) {
+				if(a[i] == b) return true;
+			}
+			return false;
+		}
+		function findParentBySelector(root,elm, selector) {
+			var all = root.querySelectorAll(selector);
+			var cur = elm.parentNode;
+			while(cur && !collectionHas(all, cur)) { //keep going up until you find a match
+				cur = cur.parentNode; //go up
+			}
+			return cur; //will return null if not found
+		}
 		Polymer('kanban-board',{
 			movingStoryHTML:null,
+			root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
+			polymerElement:null,
 			ready:function(){
 				//Track Start
+				root = this.shadowRoot;
+				polymerElement = this;
 				/*Polymer.addEventListener(this.parentNode, "trackstart", function(event) {
 				  console.log("trackstart");
 				});*/
-				$(this.shadowRoot.querySelectorAll('li')).mousedown(function(){
-					movingStoryHTML = this;
-					$(this).hide();
-				});
-				$(this.shadowRoot.querySelectorAll('ol')).mouseup(function(){
-					
-					$(movingStoryHTML).show();
-				});
+				
 				/*Polymer.addEventListener(this.shadowRoot.querySelector('.taskList li'), "trackstart", function(event) {
 				  console.log("trackstart");
 				  console.log(event);
 				  //event.srcElement.style.visibility="hidden";
-				  $(event.srcElement).remove();
+				  //$(event.srcElement).remove();
 				});
 				Polymer.addEventListener(this.shadowRoot.querySelector('.board'), "track", function(event) {
 				  //console.log("track");
@@ -130,11 +86,64 @@
 				Polymer.addEventListener(this.shadowRoot.querySelector('.board'), "trackend", function(event) {
 				  //console.log("trackend");
 				});*/
+				
 				/*this.shadowRoot.querySelector('.board').addEventListener('trackstart',function(e){
 					//console.log("trackstart");
 				});*/
+				addEventListener('drag-start', function(e) {
+				  var dragInfo = e.detail;
+				  // flaw #2: e vs dragInfo.event
+				  //var color = dragInfo.event.target.style.backgroundColor;
+				  dragInfo.avatar.style.cssText = 'display:block; background-color:white; width:260px;';
+				  var movingElement = findParentBySelector(root,dragInfo.event.target, "li");
+				  e.detail.avatar.innerHTML = "";
+				  e.detail.avatar.appendChild(movingElement);
+				  console.log("Drag Start");
+				  console.log(movingElement);
+				  
+				  
+				  dragInfo.drag = function() 
+				  {
+					console.log("Drag Continue");
+				  };
+				  dragInfo.drop = function(dragInfo) 
+				  {
+					console.log("Drag Stop");
+					var dropTarget = dragInfo.event.relatedTarget;
+					var stateList = findParentBySelector(root,dragInfo.event.target, ".taskList");
+					if(stateList != null)
+					{
+					
+					}
+					polymerElement.$.getBoard.go();
+				  };
+				});
+				//
+				/*function drop(dragInfo) {
+				  var color = dragInfo.avatar.style.borderColor;
+				  var dropTarget = dragInfo.event.relatedTarget;
+				  if (color && dropTarget.id === 'drop') {
+					var f = dragInfo.framed;
+					var d = document.createElement('div');
+					d.className = 'dropped';
+					d.style.left = f.x - 4 + 'px';
+					d.style.top = f.y - 4 + 'px';
+					d.style.backgroundColor = color;
+					dropTarget.appendChild(d);
+					dropTarget.style.backgroundColor = color;
+				  }
+				}*/
 			},
-
+			boardUpdateResponse: function(event, response){
+				/*$(this.shadowRoot.querySelectorAll('li')).mousedown(function(){
+					movingStoryHTML = this;
+					$(this).hide();
+				});
+				$(this.shadowRoot.querySelectorAll('ol')).mouseup(function(){
+					
+					$(movingStoryHTML).show();
+				});*/
+			},
 			ajaxResponse: function(event, response) {
 				console.log(response);
 			},
