@@ -169,10 +169,11 @@
 			$epic["states"] = array();
 		
 			//For each state
-			foreach($states as $state)
+			foreach($states as $index => $state)
 			{	
 				$stateEntry = array();
 				$stateEntry["name"] = $state["name"];
+				$stateEntry["column"] = $index;
 				$storiesResult = $db->query("SELECT id, sprint_id, epic_id, summary, size, ".
 									"description, state, percent_done, status FROM stories ".
 									"JOIN `order` on id = story_id WHERE ".
@@ -314,13 +315,15 @@
 		}
 	}
 	
-	//Updates a blog entry
+	//Updates a story
 	function editStory($params)
 	{
 		//Check required parameters
 		$required = array("id");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
+		$id = $params["id"];
+		unset($params["id"]);
 		
 		//Check against optional fields
 		$optional = array("sprint_id","epic_id","state","size","summary", "description",
@@ -329,29 +332,62 @@
 		{
 			if(in_array($key,$optional) === false)
 			{
-				throw new Exception("No story exists for that id");
+				setHeaderStatus(400);
+				throw new Exception("Passed field '$key' not supported");
 			}
 		}
 		
-		//Check if story exists
+		//Check parameters that are set
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
+		if(isset($params["epic_id"]) && $db->query("SELECT COUNT(*) FROM epics WHERE id = ".
+			$db->quote($params["epic_id"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"No epic exists for epic_id");
+		}
+		if(isset($params["state"]) && $db->query("SELECT COUNT(*) FROM states ".
+			"WHERE `column` = ".$db->quote($params["state"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"No state exists for state");
+		}
+		if(isset($params["status"]) && $db->query("SELECT COUNT(*) FROM status ".
+			"WHERE id = ".$db->quote($params["status"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"Incorrect value for status parameter");
+		}
+		if(isset($params["size"]) && $db->query("SELECT COUNT(*) FROM sizes ".
+			"WHERE value = ".$db->quote($params["size"]))->fetchColumn() == 0)
+		{
+			setHeaderStatus(400);
+			return array("error"=>"Incorrect value for size parameter");
+		}
+		
+		//Check if story exists
+		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($id))->fetchColumn() == 0)
 		{
 			setHeaderStatus(404);
 			return array("error"=>"No story exists for that id");
 		}
 		
 		//Update Entry
-		$db->query("UPDATE entries SET title = ".$db->quote($params["title"]).", body = ".$db->quote($params["body"])." WHERE id = ".$db->quote($params["id"]));
+		foreach($params as $key=>$value)
+		{
+			$db->query("UPDATE stories SET $key = ".$db->quote($value)." WHERE id = ".$db->quote($id));
+		}
 		
+		//Update story order
+		updateStoryOrder($id,-1);
+
 		//return update success
 		return array("status" => "Entry Updated");
 	}
 	
-	//Deletes a blog entry
+	//Deletes a story
 	function deleteStory($params)
 	{
-		/*
+		
 		//Check required parameters
 		$required = array("id");
 		$checkResult = checkParams($params, $required);
@@ -359,17 +395,17 @@
 		
 		//Check if entry exists
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM entries WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(404);
 			return array("error"=>"No entry exists for that id");
 		}
 		
 		//Delete Entry
-		$db->query("DELETE FROM entries WHERE id = ".$db->quote($params["id"]));
+		$db->query("DELETE FROM stories WHERE id = ".$db->quote($params["id"]));
 		
 		//return delete success
-		return array("status" => "Entry Deleted");
-		*/
+		return array("status" => "Story Deleted");
+		
 	}
 ?>
