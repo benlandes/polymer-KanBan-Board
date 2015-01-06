@@ -1,58 +1,64 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
 <link rel="import" href="../../bower_components/core-drag-drop/core-drag-drop.html">
-
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../kanban-edit/kanban-edit.html">
 
 <polymer-element name="kanban-board">
   <template>
 	<link rel="stylesheet" type="text/css" href="kanban-board.css">
 
-    <h1>KanBan Board</h1>
-	
-	
-	<template repeat="{{epic in epicStoriesResponse.epics}}">
-		<h2 class="boardTitle">{{epic.name}}</h2>
-		<div class="board">
-			<template repeat="{{state in epic.states}}">
-				<div class="list" data-state="{{state.column}}" data-epic="{{epic.id}}">
-					<h1>{{state.name}}</h1>
-					<ol class="taskList" >
-						<template repeat="{{story in state.stories}}">
-							<li class="story" data-id="{{story.id}}">
-								<core-drag-drop></core-drag-drop>
-								<h2>{{story.summary}}</h2>
-								<p>{{story.description}}</p>
-							</li>
-						</template>
-					</ol>
-				</div>
-			</template>
-		</div>
-	</template>
-	
-	<!-- Get Board -->
-	<core-ajax
-		  id = "getBoard"
-          auto
-          url="http://api.kanbanboard.local/stories.php"
-          response="{{epicStoriesResponse}}"
-		  params='{"sprint_id":"a"}'
-		  handleAs="json"
-          ></core-ajax>
-	
-	<!-- Update Story State -->
-	<core-ajax
-		  id = "updateStory"
-		  method="PUT"
-          url="http://api.kanbanboard.local/stories.php"
-		  params='{"id":"{{updateStoryID}}",
-					"state":"{{updateStoryState}}",
-					"epic_id":"{{updateStoryEpicID}}"}'
-		  on-core-response="{{storyUpdated}}"
-          ></core-ajax>
-  
+	<paper-action-dialog autoCloseDisabled >
+		<h1>KanBan Board</h1>
+		
+		<paper-button on-click="{{displayEdit}}" raised>Edit Story</paper-button>
+		<p id="testArea"></p>
+		<template repeat="{{epic in epicStoriesResponse.epics}}">
+			<h2 class="boardTitle">{{epic.name}}</h2>
+			<div class="board">
+				<template repeat="{{state in epic.states}}">
+					<div class="list" data-state="{{state.column}}" data-epic="{{epic.id}}">
+						<h1>{{state.name}}</h1>
+						<ol class="taskList" >
+							<template repeat="{{story in state.stories}}">
+								<li class="story" data-id="{{story.id}}">
+									<core-drag-drop></core-drag-drop>
+									<h2>{{story.summary}}</h2>
+									<p>{{story.description}}</p>
+								</li>
+							</template>
+						</ol>
+					</div>
+				</template>
+			</div>
+		</template>
+		
+		<!-- Get Board -->
+		<core-ajax
+			  id = "getBoard"
+			  auto
+			  url="http://api.kanbanboard.local/stories.php"
+			  response="{{epicStoriesResponse}}"
+			  params='{"sprint_id":"a"}'
+			  handleAs="json"
+			  ></core-ajax>
+		
+		<!-- Update Story State -->
+		<core-ajax
+			  id = "updateStory"
+			  method="PUT"
+			  url="http://api.kanbanboard.local/stories.php"
+			  params='{"id":"{{updateStoryID}}",
+						"state":"{{updateStoryState}}",
+						"epic_id":"{{updateStoryEpicID}}"}'
+			  on-core-response="{{storyUpdated}}"
+			  ></core-ajax>
+	  
 
-	</template>
+		</template>
+		<paper-button affirmative>Cancel</paper-button>
+		<paper-button affirmative autofocus>Accept</paper-button>
+	</paper-action-dialog>
 	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script>
@@ -77,6 +83,10 @@
 			movingStoryHTML:null,
 			root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
 			polymerElement:null,
+			displayEdit:function(){
+				var editElem = document.createElement('kanban-edit');
+				root.getElementById('testArea').appendChild(editElem);
+			},
 			ready:function(){
 				//Track Start
 				root = this.shadowRoot;
