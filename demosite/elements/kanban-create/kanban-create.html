@@ -10,8 +10,15 @@
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 
 <polymer-element name="kanban-create">
+	<core-style id="x-dialog">
+	  html /deep/ #createDialog::shadow #scroller {
+		width: 800px;
+	  }
+	</core-style>
+	<core-style ref="x-dialog"></core-style>
   <template>
 	<style>
 		paper-input {
@@ -28,89 +35,91 @@
 			clear: both;
 		}
 	</style>
-    <h1>Create Element</h1>
-	
-	<paper-input label="Summary" floatingLabel=true value="{{summary}}" required></paper-input>
-	<br/>
-	
-	<paper-input-decorator label="Description" floatingLabel>
-      <paper-autogrow-textarea>
-        <textarea value="{{description}}"></textarea>
-      </paper-autogrow-textarea>
-    </paper-input-decorator>
-	
-	<label>Percent Done</label>
-	<br/>
-	<paper-slider value={{percentDone}} editable></paper-slider>
-	<br/>
-	
-	<paper-dropdown-menu label="Select Size">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedSize}}">
-				<template repeat="{{size in sizesResponse}}">
-					<paper-item label="{{size.value}}">{{size.value}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/>
-	
-	<paper-dropdown-menu label="Select Epic">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedEpic}}">
-				<template repeat="{{epic in epicsResponse}}">
-					<paper-item label="{{epic.id}}">{{epic.name}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/>
-	
-	<paper-dropdown-menu label="Select Sprint">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedSprint}}">
-				<template repeat="{{sprint in sprintsResponse}}">
-					<paper-item label="{{sprint.id}}" >{{sprint.name}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/> 
-	
-	<paper-dropdown-menu label="Select State">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedState}}">
-				<template repeat="{{state in statesResponse}}">
-					<paper-item label="{{state.column}}" >{{state.name}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/> 
-	
-	<paper-dropdown-menu label="Select Status">
-		<paper-dropdown class="dropdown">
-			<core-menu class="menu" selectedItem="{{selectedStatus}}">
-				<template repeat="{{status in statusResponse}}">
-					<paper-item label="{{status.id}}" >{{status.name}}</paper-item>
-				</template>
-			</core-menu>
-		</paper-dropdown>
-	</paper-dropdown-menu>
-	<br/> 
-	
-	<br/>
-	<p>{{percentDone}}</p>
-	<p>{{summary}}</p>
-	<p>{{description}}</p>
-	<p>{{storyPoints}}</p>
-	<p>{{selectedUser.attributes.label.textContent}}</p>
-	<p>{{selectedStatus.attributes.label.textContent}}</p>
-	<p>{{selectedSprint.attributes.label.textContent}}</p>
-	<p>{{selectedState.attributes.label.textContent}}</p>
-	
-	
-	<paper-button on-click="{{submit}}" raised>Submit</paper-button>
+	<paper-dialog autoCloseDisabled id="createDialog" >
+		<h1>Create Story</h1>
+		
+		<paper-input label="Summary" floatingLabel=true value="{{summary}}" required></paper-input>
+		<br/>
+		
+		<paper-input-decorator label="Description" floatingLabel>
+		  <paper-autogrow-textarea>
+			<textarea value="{{description}}"></textarea>
+		  </paper-autogrow-textarea>
+		</paper-input-decorator>
+		
+		<label>Percent Done</label>
+		<br/>
+		<paper-slider value={{percentDone}} editable></paper-slider>
+		<br/>
+		
+		<paper-dropdown-menu label="Select Size">
+			<paper-dropdown class="dropdown">
+				<core-menu class="menu" selectedItem="{{selectedSize}}">
+					<template repeat="{{size in sizesResponse}}">
+						<paper-item label="{{size.value}}">{{size.value}}</paper-item>
+					</template>
+				</core-menu>
+			</paper-dropdown>
+		</paper-dropdown-menu>
+		<br/>
+		
+		<paper-dropdown-menu label="Select Epic">
+			<paper-dropdown class="dropdown">
+				<core-menu class="menu" selectedItem="{{selectedEpic}}">
+					<template repeat="{{epic in epicsResponse}}">
+						<paper-item label="{{epic.id}}">{{epic.name}}</paper-item>
+					</template>
+				</core-menu>
+			</paper-dropdown>
+		</paper-dropdown-menu>
+		<br/>
+		
+		<paper-dropdown-menu label="Select Sprint">
+			<paper-dropdown class="dropdown">
+				<core-menu class="menu" selectedItem="{{selectedSprint}}">
+					<template repeat="{{sprint in sprintsResponse}}">
+						<paper-item label="{{sprint.id}}" >{{sprint.name}}</paper-item>
+					</template>
+				</core-menu>
+			</paper-dropdown>
+		</paper-dropdown-menu>
+		<br/> 
+		
+		<paper-dropdown-menu label="Select State">
+			<paper-dropdown class="dropdown">
+				<core-menu class="menu" selectedItem="{{selectedState}}">
+					<template repeat="{{state in statesResponse}}">
+						<paper-item label="{{state.column}}" >{{state.name}}</paper-item>
+					</template>
+				</core-menu>
+			</paper-dropdown>
+		</paper-dropdown-menu>
+		<br/> 
+		
+		<paper-dropdown-menu label="Select Status">
+			<paper-dropdown class="dropdown">
+				<core-menu class="menu" selectedItem="{{selectedStatus}}">
+					<template repeat="{{status in statusResponse}}">
+						<paper-item label="{{status.id}}" >{{status.name}}</paper-item>
+					</template>
+				</core-menu>
+			</paper-dropdown>
+		</paper-dropdown-menu>
+		<br/> 
+		
+		<br/>
+		<!--<p>{{percentDone}}</p>
+		<p>{{summary}}</p>
+		<p>{{description}}</p>
+		<p>{{storyPoints}}</p>
+		<p>{{selectedUser.attributes.label.textContent}}</p>
+		<p>{{selectedStatus.attributes.label.textContent}}</p>
+		<p>{{selectedSprint.attributes.label.textContent}}</p>
+		<p>{{selectedState.attributes.label.textContent}}</p>-->
+		<paper-button dismissive id="cancel" on-click="{{cancel}}">Cancel</paper-button>
+		<paper-button affirmative autofocus id="create" on-click="{{create}}">Create</paper-button>
+		
+	</paper-dialog>
 	
 	<!-- Create Story -->
 	 <core-ajax 
@@ -126,7 +135,7 @@
 				"epic_id":"{{selectedEpic.attributes.label.textContent}}"}'
 		handleAs="json"
 		method="POST"
-		on-core-response="{{ajaxResponse}}"
+		on-core-response="{createCompleted}}"
 		></core-ajax>
 		
 	<!-- Get Status List -->
@@ -183,17 +192,28 @@
     Polymer('kanban-create',{
 		test:"Hello",
 		ready: function() {
-			//this.usersResponse = "Test";
 
 		},
-		ajaxResponse: function(event, response) {
+		showDialog:function() {
+			this.$.createDialog.toggle();
+		},
+		createCompleted: function(event, response) {
             console.log(response);
+			this.$.editDialog.toggle();
+			this.fire('close');
         },
 		submit: function(){
 			/*var $d = this.shadowRoot.querySelectorAll('paper-input');
 			Array.prototype.forEach.call($d, function(d) {
 			  d.isInvalid = !d.validity.valid;
 			});*/
+			//this.$.createRequest.go();
+		},
+		cancel: function(){
+			this.$.createDialog.toggle();
+			this.fire('close');
+		},
+		create: function(){
 			this.$.createRequest.go();
 		}
     });

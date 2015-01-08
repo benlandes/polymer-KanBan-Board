@@ -124,8 +124,8 @@
 		
 		//Retrieve from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, sprint_id, summary, story_points, ".
-									"description, state, champion_id FROM stories ".
+		$queryResult = $db->query("SELECT id, sprint_id, epic_id, summary, size, ".
+									"description, state, percent_done, status FROM stories ".
 									"WHERE id = ".$db->quote($params["id"]));
 		
 		//Check if blog was not found

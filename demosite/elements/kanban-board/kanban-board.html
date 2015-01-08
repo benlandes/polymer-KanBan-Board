@@ -2,7 +2,11 @@
 <link rel="import" href="../../bower_components/core-ajax/core-ajax.html">
 <link rel="import" href="../../bower_components/core-drag-drop/core-drag-drop.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="../../bower_components/core-icon-button/core-icon-button.html">
 <link rel="import" href="../kanban-edit/kanban-edit.html">
+<link rel="import" href="../kanban-create/kanban-create.html">
 
 <polymer-element name="kanban-board">
   <template>
@@ -10,9 +14,13 @@
 
 	<paper-action-dialog autoCloseDisabled >
 		<h1>KanBan Board</h1>
-		
-		<paper-button on-click="{{displayEdit}}" raised>Edit Story</paper-button>
-		<p id="testArea"></p>
+		<div class="create">
+			<paper-button-base on-click="{{createStory}}">
+				<core-icon icon="create"></core-icon>
+				<kanban-create id="createStory" on-close="{{createDialogOnClose}}"></kanban-create>
+			</paper-button-base>
+		</div>
+	
 		<template repeat="{{epic in epicStoriesResponse.epics}}">
 			<h2 class="boardTitle">{{epic.name}}</h2>
 			<div class="board">
@@ -23,8 +31,17 @@
 							<template repeat="{{story in state.stories}}">
 								<li class="story" data-id="{{story.id}}">
 									<core-drag-drop></core-drag-drop>
-									<h2>{{story.summary}}</h2>
-									<p>{{story.description}}</p>
+									<div class="status-{{story.status}}"></div>
+									<div class="fab">
+										<paper-button-base on-click="{{editStory}}">
+											<core-icon icon="settings"></core-icon>
+											<kanban-edit id="edit-{{story.id}}" storyID="{{story.id}}" on-close="{{editDialogOnClose}}"></kanban-edit>
+										</paper-button-base>
+										
+									</div>
+									<h2>{{story.summary}} - {{story.size}}</h2>
+									<paper-progress value="{{story.percent_done}}"></paper-progress>
+									
 								</li>
 							</template>
 						</ol>
@@ -83,9 +100,28 @@
 			movingStoryHTML:null,
 			root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
 			polymerElement:null,
-			displayEdit:function(){
-				var editElem = document.createElement('kanban-edit');
-				root.getElementById('testArea').appendChild(editElem);
+			editDialogOnClose:function(){
+				polymerElement.$.getBoard.go();
+			},
+			createDialogOnClose:function(){
+				polymerElement.$.getBoard.go();
+			},
+			createStory:function(e){
+				root.getElementById('createStory').showDialog();
+			},
+			editStory:function(e){
+				console.log("Edit Story");
+				/*var editElem = document.createElement('kanban-edit');
+				
+				var storyElem = findParentBySelector(root,e.target, ".story");
+				editElem.setAttribute("storyID", storyElem.dataset.id);
+				editElem.setAttribute("on-close", "{{editDialogOnClose}}");
+				storyElem.appendChild(editElem);*/
+				console.log(e.target);
+				console.log(polymerElement.$.test);
+				var storyElem = findParentBySelector(root,e.target, ".story");
+				root.getElementById('edit-'+storyElem.dataset.id).showDialog();
+				//polymerElement.$.test.showDialog();
 			},
 			ready:function(){
 				//Track Start
