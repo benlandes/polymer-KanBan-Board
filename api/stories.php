@@ -213,7 +213,7 @@
 		
 		//Check required parameters
 		$required = array("sprint_id","epic_id","state","size","summary", "description",
-						"percent_done","status");
+						"percent_done","status","assigned");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
@@ -247,6 +247,24 @@
 			return array("error"=>"Incorrect value for size parameter");
 		}
 		
+		$assignees = explode(",",preg_replace('/\s+/', '', $params["assigned"]));
+		foreach($assignees as $index => $assignee)
+		{
+			if($assignee != "")
+			{
+				if($db->query("SELECT COUNT(*) FROM users ".
+				"WHERE id = ".$db->quote($assignee))->fetchColumn() == 0)
+				{
+					setHeaderStatus(400);
+					return array("error"=>"No user with id '$assignee'");
+				}
+			}
+			else
+			{
+				unset($assignees[$index]);
+			}
+		}
+		
 		//Add entry to database
 		$db = createDBConnection();
 		$id = uniqid();
@@ -260,6 +278,12 @@
 		
 		//Order of story will be last
 		updateStoryOrder($id, -1);
+		
+		//Add assigned users
+		foreach($assignees as $assignee)
+		{
+			$db->query("INSERT INTO story_user_match (story_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+		}
 		
 		//return create success
 		return array("status" => "Entry Created", "id" => $id);
@@ -364,6 +388,28 @@
 			return array("error"=>"Incorrect value for size parameter");
 		}
 		
+		if(isset($params["assigned"]))
+		{
+			$assignees = explode(",",preg_replace('/\s+/', '', $params["assigned"]));
+			foreach($assignees as $index => $assignee)
+			{
+				if($assignee != "")
+				{
+					if($db->query("SELECT COUNT(*) FROM users ".
+					"WHERE id = ".$db->quote($assignee))->fetchColumn() == 0)
+					{
+						setHeaderStatus(400);
+						return array("error"=>"No user with id '$assignee'");
+					}
+				}
+				else
+				{
+					unset($assignees[$index]);
+				}
+			}
+		}
+		
+		
 		//Check if story exists
 		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($id))->fetchColumn() == 0)
 		{
@@ -375,6 +421,16 @@
 		foreach($params as $key=>$value)
 		{
 			$db->query("UPDATE stories SET $key = ".$db->quote($value)." WHERE id = ".$db->quote($id));
+		}
+		
+		//Update assigned
+		if(isset($params["assigned"]))
+		{
+			$db->query("DELETE FROM story_user_match WHERE story_id = ".$db->quote($params["id"]));
+			foreach($assignees as $assignee)
+			{
+				$db->query("INSERT INTO story_user_match (story_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+			}
 		}
 		
 		//Update story order
