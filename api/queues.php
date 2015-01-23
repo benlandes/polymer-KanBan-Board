@@ -18,13 +18,13 @@
 		return $db;
 	}
 	
-	print(json_encode(getStatusList()));
+	print(json_encode(getStateList()));
 	
-	function getStatusList()
+	function getStateList()
 	{
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, name FROM status ORDER BY `order` ASC");
+		$queryResult = $db->query("SELECT id, name FROM queues ORDER BY `order` ASC");
 									
 		//Return no content header if empty
 		if($queryResult->rowCount() == 0) setHeaderStatus(204);

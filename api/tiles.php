@@ -18,30 +18,29 @@
 		"summary"=>["min"=>1, "max"=>400],
 		"description"=>["min"=>1, "max"=>4000]
 		];
-	$STATE_TRANSFERS = [[],[],[],[],[],[]];
 
 	//Route request depending on http method
 	if($_SERVER['REQUEST_METHOD'] === 'POST')
 	{
-		$returnValue = createStory($_POST);
+		$returnValue = createTile($_POST);
 	}
 	else if($_SERVER['REQUEST_METHOD'] === 'PUT')
 	{
 		$_PUT = array();
 		parse_str(file_get_contents('php://input'), $_PUT);
-		$returnValue = editStory($_PUT);
+		$returnValue = editTile($_PUT);
 	}
 	else if($_SERVER['REQUEST_METHOD'] === 'DELETE')
 	{
 		$_DELETE = array();
 		parse_str(file_get_contents('php://input'), $_DELETE);
-		$returnValue = deleteStory($_DELETE);
+		$returnValue = deleteTile($_DELETE);
 	}
 	else{ //GET
-		//If a specific id is set get that story otherwise get all
+		//If a specific id is set get that tile otherwise get all
 		if(isset($_GET["id"]))
 		{
-			$returnValue = getStory($_GET);
+			$returnValue = getTile($_GET);
 		}
 		else if(isset($_GET["sprint_id"]))
 		{
@@ -49,7 +48,7 @@
 		}
 		else
 		{
-			$returnValue = getStoryList($_GET);
+			$returnValue = getTileList($_GET);
 		}
 	}
 	print(json_encode($returnValue));
@@ -113,8 +112,8 @@
         header($_SERVER['SERVER_PROTOCOL'].' '.$code.' '.$value, true, $code);
 	}
 	
-	//Gets a blog entry
-	function getStory($params)
+	//Gets a tile entry
+	function getTile($params)
 	{
 	
 		//Check required parameters
@@ -124,113 +123,54 @@
 		
 		//Retrieve from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, sprint_id, epic_id, summary, size, ".
-									"description, state, percent_done, status FROM stories ".
+		$queryResult = $db->query("SELECT id, sprint_id, summary, size, ".
+									"description, queue_id, swimlane_id FROM tiles ".
 									"WHERE id = ".$db->quote($params["id"]));
 		
 		//Check if blog was not found
 		if($queryResult->rowCount() == 0)
 		{
 			setHeaderStatus(404);
-			return array("error"=>"No stories for that id");
+			return array("error"=>"No tiles for that id");
 		}
 		
-		//Return result
 		$result = $queryResult->fetch(PDO::FETCH_ASSOC);
+		
+		//Get Assignees
+		$assigneeResult = $db->query("SELECT u.id, u.first_name, u.last_name FROM users u ".
+									"JOIN tile_user_match m ON m.tile_id ".
+									"WHERE m.tile_id = ".$db->quote($params["id"]));
+		$result["assignees"] = $assigneeResult->fetchAll(PDO::FETCH_ASSOC);
+
 		return $result;
 	
 	}
-	function getBoard($params)
-	{
-		//Check required parameters
-		$required = array("sprint_id");
-		$checkResult = checkParams($params, $required);
-		if(isset($checkResult["error"])) return $checkResult;
-		
-		//Check parameters
-		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM sprints WHERE id = ".
-			$db->quote($params["sprint_id"]))->fetchColumn() == 0)
-		{
-			setHeaderStatus(400);
-			return array("error"=>"No sprint exists for that sprint_id");
-		}
-		
-		//Get states
-		$statesResult = $db->query("SELECT `column`, name FROM states ORDER BY `column` ASC");
-		$states = $statesResult->fetchAll(PDO::FETCH_ASSOC);
-		
-		//For each epic
-		$db = createDBConnection();
-		$epicsResult = $db->query("SELECT id, name FROM epics");
-		$epics = $epicsResult->fetchAll(PDO::FETCH_ASSOC);
-		foreach($epics as &$epic)
-		{
-			$epic["states"] = array();
-		
-			//For each state
-			foreach($states as $index => $state)
-			{	
-				$stateEntry = array();
-				$stateEntry["name"] = $state["name"];
-				$stateEntry["column"] = $index;
-				$storiesResult = $db->query("SELECT id, sprint_id, epic_id, summary, size, ".
-									"description, state, percent_done, status FROM stories ".
-									"JOIN `order` on id = story_id WHERE ".
-									"epic_id = ".$db->quote($epic["id"])." AND ".
-									"sprint_id = ".$db->quote($params["sprint_id"])." AND ".
-									"state = ".$db->quote($state["column"])." ".
-									"ORDER BY `order` ASC");
-				$stories = $storiesResult->fetchAll(PDO::FETCH_ASSOC);
-				$stateEntry["stories"] = $stories;
-				array_push($epic["states"],$stateEntry);
-			}
-		}
-		
-		return array("epics"=>$epics);
-	}
 	
-	//Gets a list of blogs
-	function getStoryList($params)
-	{
-		//Get content from database
-		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, sprint_id, summary, story_points, ".
-									"qa_story_points, pbi_rank, description, state, ".
-									"champion_id, qa_champion_id FROM stories");
-									
-		//Return no content header if empty
-		if($queryResult->rowCount() == 0) setHeaderStatus(204);
-		
-		//Return results
-		$result = $queryResult->fetchAll(PDO::FETCH_ASSOC);
-		return $result;
-	}
 	
-	//Creates a blog entry
-	function createStory($params)
+	//Creates a tile 
+	function createTile($params)
 	{
 		
 		//Check required parameters
-		$required = array("sprint_id","epic_id","state","size","summary", "description",
+		$required = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
 						"percent_done","status","assigned");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
 		//Check parameters
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM epics WHERE id = ".
-			$db->quote($params["epic_id"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM swimlanes WHERE id = ".
+			$db->quote($params["swimlane_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"No epic exists for epic_id");
+			return array("error"=>"No swimlane exists for swimlane_id");
 		}
 		
-		if($db->query("SELECT COUNT(*) FROM states ".
-			"WHERE `column` = ".$db->quote($params["state"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM queues ".
+			"WHERE `column` = ".$db->quote($params["queue_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"No state exists for state");
+			return array("error"=>"No queue exists for queue_id");
 		}
 		
 		if($db->query("SELECT COUNT(*) FROM status ".
@@ -269,78 +209,75 @@
 		$db = createDBConnection();
 		$id = uniqid();
 		
-		$db->query("INSERT INTO stories (id, epic_id, summary, size, description".
-					", state, percent_done, sprint_id, status) VALUES ('$id',".$db->quote($params["epic_id"]).",".
+		$db->query("INSERT INTO tiles (id, swimlane_id, summary, size, description".
+					", swimlane_id, percent_done, sprint_id, status) VALUES ('$id',".$db->quote($params["swimlane_id"]).",".
 					$db->quote($params["summary"]).",".$db->quote($params["size"]).",".
-					$db->quote($params["description"]).",".intval($params["state"]).",".
+					$db->quote($params["description"]).",".intval($params["queue_id"]).",".
 					$db->quote($params["percent_done"]).",".$db->quote($params["sprint_id"]).",".
 					$db->quote($params["status"]).")");
 		
-		//Order of story will be last
-		updateStoryOrder($id, -1);
+		//Order of tile will be last
+		updateTileOrder($id, -1);
 		
 		//Add assigned users
 		foreach($assignees as $assignee)
 		{
-			$db->query("INSERT INTO story_user_match (story_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+			$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
 		}
 		
 		//return create success
 		return array("status" => "Entry Created", "id" => $id);
 	}
 	
-	//Updates order of story
-	function updateStoryOrder($storyID,$order){
+	//Updates order of tile
+	function updateTileOrder($tileID,$order){
 		//Get content from database
 		$db = createDBConnection();
 		
-		$storyResult = $db->query("SELECT epic_id,sprint_id, state FROM stories ".
-									"WHERE id = ".$db->quote($storyID));
-		if($storyResult->rowCount() == 0)
+		$tileResult = $db->query("SELECT swimlane_id,sprint_id, queue_id FROM tiles ".
+									"WHERE id = ".$db->quote($tileID));
+		if($tileResult->rowCount() == 0)
 		{
-			throw new Exception("No story exists for that id");
+			throw new Exception("No tile exists for that id");
 		}
-		$updateStory = $storyResult->fetch(PDO::FETCH_ASSOC);
+		$updateTile = $tileResult->fetch(PDO::FETCH_ASSOC);
 		
 		//Delete previous order position
-		$db->query("DELETE from `order` WHERE story_id = ".$db->quote($storyID));
+		$db->query("DELETE from `order` WHERE tile_id = ".$db->quote($tileID));
 		
-		//Query stories in same group
-		$queryResult = $db->query("SELECT story_id FROM stories JOIN `order` ON id = story_id ".
-									"WHERE sprint_id = ".$db->quote($updateStory["sprint_id"])." ".
-									"AND epic_id = ".$db->quote($updateStory["epic_id"])." ".
-									"AND state = ".$db->quote($updateStory["state"])." ".
+		//Query tiles in same group
+		$queryResult = $db->query("SELECT tile_id FROM tiles JOIN `order` ON id = tile_id ".
+									"WHERE sprint_id = ".$db->quote($updateTile["sprint_id"])." ".
+									"AND swimlane_id = ".$db->quote($updateTile["swimlane_id"])." ".
+									"AND queue_id = ".$db->quote($updateTile["queue_id"])." ".
 									"ORDER BY `order` ASC");
 				
-		//If no order is set story will be ordered last
-		$storyCount = $queryResult->rowCount();
+		//If no order is set tile will be ordered last
+		$tileCount = $queryResult->rowCount();
 		if($order == -1)
 		{
-			$order = $storyCount;
+			$order = $tileCount;
 		}
 		
 		//Out of bounds
-		if($order > $storyCount) throw new Exception("Order out of bounds");
+		if($order > $tileCount) throw new Exception("Order out of bounds");
 		
-		//Insert story into existing order
-		$stories = $queryResult->fetchAll(PDO::FETCH_ASSOC);
-		array_splice( $stories, $order, 0, array(array("story_id"=>$storyID)));
+		//Insert tile into existing order
+		$tiles = $queryResult->fetchAll(PDO::FETCH_ASSOC);
+		array_splice( $tiles, $order, 0, array(array("tile_id"=>$tileID)));
 		
-		//Reorder stories
-		foreach($stories as $key=>$story){
-			//print("Key".$key);
-			//print_r($story);
+		//Reorder tiles
+		foreach($tiles as $key=>$tile){
 			//Delete previous order row
-			$db->query("DELETE from `order` WHERE story_id = ".$db->quote($story["story_id"]));
+			$db->query("DELETE from `order` WHERE tile_id = ".$db->quote($tile["tile_id"]));
 			
 			//Create order row
-			//print("INSERT INTO `order` (story_id,`order`) VALUES (".$db->quote($story["story_id"]).",'$key')");
-			$db->query("INSERT INTO `order` (story_id,`order`) VALUES (".$db->quote($story["story_id"]).",'$key')");
+			$db->query("INSERT INTO `order` (tile_id,`order`) VALUES (".$db->quote($tile["tile_id"]).",'$key')");
 		}
 	}
 	
-	//Updates a story
-	function editStory($params)
+	//Updates a tile
+	function editTile($params)
 	{
 		//Check required parameters
 		$required = array("id");
@@ -350,7 +287,7 @@
 		unset($params["id"]);
 		
 		//Check against optional fields
-		$optional = array("sprint_id","epic_id","state","size","summary", "description",
+		$optional = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
 				"percent_done","status");
 		foreach($params as $key => $value)
 		{
@@ -363,17 +300,17 @@
 		
 		//Check parameters that are set
 		$db = createDBConnection();
-		if(isset($params["epic_id"]) && $db->query("SELECT COUNT(*) FROM epics WHERE id = ".
-			$db->quote($params["epic_id"]))->fetchColumn() == 0)
+		if(isset($params["swimlane_id"]) && $db->query("SELECT COUNT(*) FROM swimlanes WHERE id = ".
+			$db->quote($params["swimlane_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"No epic exists for epic_id");
+			return array("error"=>"No swimlane exists for swimlane_id");
 		}
-		if(isset($params["state"]) && $db->query("SELECT COUNT(*) FROM states ".
-			"WHERE `column` = ".$db->quote($params["state"]))->fetchColumn() == 0)
+		if(isset($params["queue_id"]) && $db->query("SELECT COUNT(*) FROM queues ".
+			"WHERE id = ".$db->quote($params["queue_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"No state exists for state");
+			return array("error"=>"No queue exists for queue_id");
 		}
 		if(isset($params["status"]) && $db->query("SELECT COUNT(*) FROM status ".
 			"WHERE id = ".$db->quote($params["status"]))->fetchColumn() == 0)
@@ -410,38 +347,38 @@
 		}
 		
 		
-		//Check if story exists
-		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($id))->fetchColumn() == 0)
+		//Check if tile exists
+		if($db->query("SELECT COUNT(*) FROM tiles WHERE id = ".$db->quote($id))->fetchColumn() == 0)
 		{
 			setHeaderStatus(404);
-			return array("error"=>"No story exists for that id");
+			return array("error"=>"No tile exists for that id");
 		}
 		
 		//Update Entry
 		foreach($params as $key=>$value)
 		{
-			$db->query("UPDATE stories SET $key = ".$db->quote($value)." WHERE id = ".$db->quote($id));
+			$db->query("UPDATE tiles SET $key = ".$db->quote($value)." WHERE id = ".$db->quote($id));
 		}
 		
 		//Update assigned
 		if(isset($params["assigned"]))
 		{
-			$db->query("DELETE FROM story_user_match WHERE story_id = ".$db->quote($params["id"]));
+			$db->query("DELETE FROM tile_user_match WHERE tile_id = ".$db->quote($params["id"]));
 			foreach($assignees as $assignee)
 			{
-				$db->query("INSERT INTO story_user_match (story_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
 			}
 		}
 		
-		//Update story order
-		updateStoryOrder($id,-1);
+		//Update tile order
+		updateTileOrder($id,-1);
 
 		//return update success
 		return array("status" => "Entry Updated");
 	}
 	
-	//Deletes a story
-	function deleteStory($params)
+	//Deletes a Tile
+	function deleteTile($params)
 	{
 		
 		//Check required parameters
@@ -451,17 +388,17 @@
 		
 		//Check if entry exists
 		$db = createDBConnection();
-		if($db->query("SELECT COUNT(*) FROM stories WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM tiles WHERE id = ".$db->quote($params["id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(404);
 			return array("error"=>"No entry exists for that id");
 		}
 		
 		//Delete Entry
-		$db->query("DELETE FROM stories WHERE id = ".$db->quote($params["id"]));
+		$db->query("DELETE FROM tiles WHERE id = ".$db->quote($params["id"]));
 		
 		//return delete success
-		return array("status" => "Story Deleted");
+		return array("status" => "Tile Deleted");
 		
 	}
 ?>

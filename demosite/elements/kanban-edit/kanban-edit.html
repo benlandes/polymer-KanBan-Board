@@ -101,9 +101,9 @@
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.status}}" valueattr="label">
-					<template repeat="{{status in statusResponse}}">
-						<paper-item label="{{status.id}}" >{{status.name}}</paper-item>
+				<core-menu class="menu" selected="{{story.color_id}}" valueattr="label">
+					<template repeat="{{color in colorsResponse}}">
+						<paper-item label="{{color.id}}" >{{status.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
@@ -153,11 +153,11 @@
 			on-core-response="{{editCompleted}}"
 			></core-ajax>
 			
-		<!-- Get Status List -->
+		<!-- Get Colors List -->
 		<core-ajax
 			  auto
-			  url="http://api.kanbanboard.local/status.php"
-			  response="{{statusResponse}}"
+			  url="http://api.kanbanboard.local/colors.php"
+			  response="{{colorsResponse}}"
 			  handleAs="json"
 			  ></core-ajax>
 			  

@@ -11,6 +11,8 @@
 <link rel="import" href="../../bower_components/paper-dropdown/paper-dropdown.html">
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 
 <polymer-element name="kanban-create">
 	<core-style id="x-dialog">
@@ -36,7 +38,7 @@
 		}
 	</style>
 	<paper-dialog autoCloseDisabled id="createDialog" >
-		<h1>Create Story</h1>
+		<h1>Create Tile</h1>
 		
 		<paper-input label="Summary" floatingLabel=true value="{{summary}}" required></paper-input>
 		<br/>
@@ -63,11 +65,11 @@
 		</paper-dropdown-menu>
 		<br/>
 		
-		<paper-dropdown-menu label="Select Epic">
+		<paper-dropdown-menu label="Select Swimlane">
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selectedItem="{{selectedEpic}}">
-					<template repeat="{{epic in epicsResponse}}">
-						<paper-item label="{{epic.id}}">{{epic.name}}</paper-item>
+				<core-menu class="menu" selectedItem="{{selectedSwimlane}}">
+					<template repeat="{{swimlane in swimlanesResponse}}">
+						<paper-item label="{{swimlane.id}}">{{swimlane.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
@@ -85,64 +87,77 @@
 		</paper-dropdown-menu>
 		<br/> 
 		
-		<paper-dropdown-menu label="Select State">
+		<paper-dropdown-menu label="Select Queue">
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selectedItem="{{selectedState}}">
-					<template repeat="{{state in statesResponse}}">
-						<paper-item label="{{state.column}}" >{{state.name}}</paper-item>
+				<core-menu class="menu" selectedItem="{{selectedQueue}}">
+					<template repeat="{{queue in queuesResponse}}">
+						<paper-item label="{{queue.column}}" >{{queue.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
 		</paper-dropdown-menu>
 		<br/> 
 		
-		<paper-dropdown-menu label="Select Status">
+		<paper-dropdown-menu label="Select Color">
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selectedItem="{{selectedStatus}}">
-					<template repeat="{{status in statusResponse}}">
-						<paper-item label="{{status.id}}" >{{status.name}}</paper-item>
+				<core-menu class="menu" selectedItem="{{selectedColor}}">
+					<template repeat="{{color in colorsResponse}}">
+						<paper-item label="{{color.id}}" >{{color.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
 		</paper-dropdown-menu>
 		<br/> 
+		<h2>Assignees</h2>
 		
+		<x-trigger icon="add">
+			<paper-dropdown class="no-padding">
+			  <div class="menu">
+				<template repeat="{{user in usersResponse}}">
+					<paper-item label="{{user.id}}" >{{user.first_name}} {{user.last_name}}</paper-item>
+				</template>
+			  </div>
+			</paper-dropdown>
+		  </x-trigger>
+	  
+		<p>{{assignees | join}}</p>
 		<br/>
 		<!--<p>{{percentDone}}</p>
 		<p>{{summary}}</p>
 		<p>{{description}}</p>
-		<p>{{storyPoints}}</p>
+		<p>{{tilePoints}}</p>
 		<p>{{selectedUser.attributes.label.textContent}}</p>
 		<p>{{selectedStatus.attributes.label.textContent}}</p>
 		<p>{{selectedSprint.attributes.label.textContent}}</p>
-		<p>{{selectedState.attributes.label.textContent}}</p>-->
+		<p>{{selectedQueue.attributes.label.textContent}}</p>-->
 		<paper-button dismissive id="cancel" on-click="{{cancel}}">Cancel</paper-button>
 		<paper-button affirmative autofocus id="create" on-click="{{create}}">Create</paper-button>
 		
 	</paper-dialog>
 	
-	<!-- Create Story -->
+	<!-- Create Tile -->
 	 <core-ajax 
 		id="createRequest" 
-		url="http://api.kanbanboard.local/stories.php" 
+		url="http://api.kanbanboard.local/tiles.php" 
 		params='{"summary":"{{summary}}", 
 				"sprint_id":"{{selectedSprint.attributes.label.textContent}}",
 				"size":"{{selectedSize.attributes.label.textContent}}",
 				"description":"{{description}}",
-				"state":"{{selectedState.attributes.label.textContent}}",
+				"queue_id":"{{selectedQueue.attributes.label.textContent}}",
 				"percent_done":"{{percentDone}}",
-				"status":"{{selectedStatus.attributes.label.textContent}}",
-				"epic_id":"{{selectedEpic.attributes.label.textContent}}"}'
+				"color_id":"{{selectedColor.attributes.label.textContent}}",
+				"swimlane_id":"{{selectedSwimlane.attributes.label.textContent}}",
+				"assignees":"{{assignees | join}}"}'
 		handleAs="json"
 		method="POST"
 		on-core-response="{createCompleted}}"
 		></core-ajax>
 		
-	<!-- Get Status List -->
+	<!-- Get Color List -->
 	<core-ajax
           auto
-          url="http://api.kanbanboard.local/status.php"
-          response="{{statusResponse}}"
+          url="http://api.kanbanboard.local/colors.php"
+          response="{{colorsResponse}}"
 		  handleAs="json"
           ></core-ajax>
 		  
@@ -154,11 +169,11 @@
 		  handleAs="json"
           ></core-ajax>
 		  
-	<!-- Get Epic List -->
+	<!-- Get Swimlane List -->
 	<core-ajax
           auto
-          url="http://api.kanbanboard.local/epics.php"
-          response="{{epicsResponse}}"
+          url="http://api.kanbanboard.local/swimlanes.php"
+          response="{{swimlanesResponse}}"
 		  handleAs="json"
           ></core-ajax>
 		  
@@ -178,11 +193,11 @@
 		  handleAs="json"
           ></core-ajax>
 	
-	<!-- Get States List -->
+	<!-- Get Queues List -->
 	<core-ajax
           auto
-          url="http://api.kanbanboard.local/states.php"
-          response="{{statesResponse}}"
+          url="http://api.kanbanboard.local/queues.php"
+          response="{{queuesResponse}}"
 		  handleAs="json"
           ></core-ajax>
 
@@ -191,6 +206,34 @@
   <script>
     Polymer('kanban-create',{
 		test:"Hello",
+		assignees:[
+      'Apple fritter',
+      'Croissant',
+      'Donut',
+      'Financier',
+      'Jello',
+      'Madeleine',
+      'Pound cake',
+      'Pretzel',
+      'Sfogliatelle'
+    ],
+		join: function(value){
+			return value.join();
+		},
+		joinIDs: function(value){
+			var returnArray = new Array();
+			value.forEach(function(user) {
+				returnArray.push(user.id);
+			});
+			return returnArray.join();
+		},
+		joinNames: function(value){
+			var returnArray = new Array();
+			value.forEach(function(user) {
+				returnArray.push(user.first_name + " " + user.last_name);
+			});
+			return returnArray.join();
+		},
 		ready: function() {
 
 		},

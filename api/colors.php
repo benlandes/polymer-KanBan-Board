@@ -18,13 +18,13 @@
 		return $db;
 	}
 	
-	print(json_encode(getStateList()));
+	print(json_encode(getColorsList()));
 	
-	function getStateList()
+	function getColorsList()
 	{
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT `column`, name FROM states ORDER BY `column` ASC");
+		$queryResult = $db->query("SELECT id, name, color FROM colors");
 									
 		//Return no content header if empty
 		if($queryResult->rowCount() == 0) setHeaderStatus(204);

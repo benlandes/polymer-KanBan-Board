@@ -12,19 +12,30 @@
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 
-<polymer-element name="kanban-tile" attributes="storyID onClose" >
+<polymer-element name="kanban-tile" attributes="tileID onClose" >
   <template>
+	<link rel="stylesheet" type="text/css" href="kanban-tile.css">
 	<style>
 
 	</style>
+	<div class="status-{{tile.color_id}}"></div>
+	<div class="fab">
+		<paper-button-base on-click="{{editTile}}">
+			<core-icon icon="settings"></core-icon>
+			<!--<kanban-edit id="edit-{{tile.id}}" tileID="{{tile.id}}" on-close="{{editDialogOnClose}}"></kanban-edit>-->
+		</paper-button-base>
+		
+	</div>
+	<h2>{{tile.summary}} - {{tile.size}}</h2>
+	<paper-progress value="{{tile.percent_done}}"></paper-progress>
 	
-		<!-- Get Story -->
+		<!-- Get Tile -->
 		<core-ajax
 			  auto
-			  url="http://api.kanbanboard.local/stories.php"
-			  params='{"id":"{{storyID}}"}'
-			  response="{{story}}"
-			  on-core-response="{{storyResponse}}"
+			  url="http://api.kanbanboard.local/tiles.php"
+			  params='{"id":"{{tileID}}"}'
+			  response="{{tile}}"
+			  on-core-response="{{tileResponse}}"
 			  handleAs="json"
 			  ></core-ajax>
 		
@@ -33,7 +44,16 @@
   
   <script>
     Polymer('kanban-tile',{
+		root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
 		ready: function() {
+			root = this.shadowRoot;
+		},
+		editTile:function(e){
+			console.log("Edit Tile");
+			console.log(e.target);
+			console.log(polymerElement.$.test);
+			var tileElem = findParentBySelector(root,e.target, ".tile");
+			root.getElementById('edit-'+tileElem.dataset.id).showDialog();
 		}
     });
 	

@@ -18,15 +18,13 @@
 		return $db;
 	}
 	
-	print(json_encode(getFields()));
+	print(json_encode(getEpicList()));
 	
-	function getFields()
+	function getEpicList()
 	{
 		//Get content from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, `order`, name, selection, required, ".
-								"options_table, `numeric`, selection FROM available_fields ".
-								"ORDER BY `order` ASC");
+		$queryResult = $db->query("SELECT id, name FROM swimlanes");
 									
 		//Return no content header if empty
 		if($queryResult->rowCount() == 0) setHeaderStatus(204);

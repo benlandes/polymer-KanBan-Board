@@ -7,75 +7,66 @@
 <link rel="import" href="../../bower_components/core-icon-button/core-icon-button.html">
 <link rel="import" href="../kanban-edit/kanban-edit.html">
 <link rel="import" href="../kanban-create/kanban-create.html">
+<link rel="import" href="../kanban-tile/kanban-tile.html">
 
 <polymer-element name="kanban-board">
   <template>
 	<link rel="stylesheet" type="text/css" href="kanban-board.css">
 
-	<paper-action-dialog autoCloseDisabled >
-		<h1>KanBan Board</h1>
-		<div class="create">
-			<paper-button-base on-click="{{createStory}}">
-				<core-icon icon="create"></core-icon>
-				<kanban-create id="createStory" on-close="{{createDialogOnClose}}"></kanban-create>
-			</paper-button-base>
-		</div>
-	
-		<template repeat="{{epic in epicStoriesResponse.epics}}">
-			<h2 class="boardTitle">{{epic.name}}</h2>
-			<div class="board">
-				<template repeat="{{state in epic.states}}">
-					<div class="list" data-state="{{state.column}}" data-epic="{{epic.id}}">
-						<h1>{{state.name}}</h1>
-						<ol class="taskList" >
-							<template repeat="{{story in state.stories}}">
-								<li class="story" data-id="{{story.id}}">
+
+	<h1>KanBan Board</h1>
+	<div class="create">
+		<paper-button-base on-click="{{createTile}}">
+			<core-icon icon="create"></core-icon>
+			<kanban-create id="createTile" on-close="{{createDialogOnClose}}"></kanban-create>
+		</paper-button-base>
+	</div>
+
+	<template repeat="{{swimlane in boardResponse.swimlanes}}">
+		<h2 class="boardTitle">{{swimlane.name}}</h2>
+		<div class="board">
+			<template repeat="{{queue in boardResponse.queues}}">
+				<div class="list" data-queueid="{{queue.id}}" data-swimlaneid="{{swimlane.id}}">
+					<h1>{{queue.name}}</h1>
+					<ol class="taskList" >
+						<template repeat="{{tile in boardResponse.tiles}}">
+							<template if="{{tile.swimlane_id == swimlane.id && tile.queue_id == queue.id}}">
+								<li class="tile" data-id="{{tile.id}}">
 									<core-drag-drop></core-drag-drop>
-									<div class="status-{{story.status}}"></div>
-									<div class="fab">
-										<paper-button-base on-click="{{editStory}}">
-											<core-icon icon="settings"></core-icon>
-											<kanban-edit id="edit-{{story.id}}" storyID="{{story.id}}" on-close="{{editDialogOnClose}}"></kanban-edit>
-										</paper-button-base>
-										
-									</div>
-									<h2>{{story.summary}} - {{story.size}}</h2>
-									<paper-progress value="{{story.percent_done}}"></paper-progress>
-									
+									<kanban-tile tileID="{{tile.id}}" ></kanban-tile>
 								</li>
 							</template>
-						</ol>
-					</div>
-				</template>
-			</div>
-		</template>
-		
-		<!-- Get Board -->
-		<core-ajax
-			  id = "getBoard"
-			  auto
-			  url="http://api.kanbanboard.local/stories.php"
-			  response="{{epicStoriesResponse}}"
-			  params='{"sprint_id":"a"}'
-			  handleAs="json"
-			  ></core-ajax>
-		
-		<!-- Update Story State -->
-		<core-ajax
-			  id = "updateStory"
-			  method="PUT"
-			  url="http://api.kanbanboard.local/stories.php"
-			  params='{"id":"{{updateStoryID}}",
-						"state":"{{updateStoryState}}",
-						"epic_id":"{{updateStoryEpicID}}"}'
-			  on-core-response="{{storyUpdated}}"
-			  ></core-ajax>
-	  
+						</template>
+					</ol>
+				</div>
+			</template>
+		</div>
+	</template>
+	
+	<!-- Get Board -->
+	<core-ajax
+		  id = "getBoard"
+		  auto
+		  url="http://api.kanbanboard.local/boards.php"
+		  response="{{boardResponse}}"
+		  params='{"sprint_id":"a",
+					"id":"a"}'
+		  handleAs="json"
+		  ></core-ajax>
+	
+	<!-- Update Tile queue -->
+	<core-ajax
+		  id = "updateTile"
+		  method="PUT"
+		  url="http://api.kanbanboard.local/tiles.php"
+		  params='{"id":"{{updateTileID}}",
+					"queue_id":"{{updateTileQueueID}}",
+					"swimlane_id":"{{updateTileSwimlaneID}}"}'
+		  on-core-response="{{tileUpdated}}"
+		  ></core-ajax>
+  
 
-		</template>
-		<paper-button affirmative>Cancel</paper-button>
-		<paper-button affirmative autofocus>Accept</paper-button>
-	</paper-action-dialog>
+	</template>
 	
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script>
@@ -97,8 +88,7 @@
 			return (' ' + element.className + ' ').indexOf(' ' + cls + ' ') > -1;
 		}
 		Polymer('kanban-board',{
-			movingStoryHTML:null,
-			root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
+			movingTileHTML:null,
 			polymerElement:null,
 			editDialogOnClose:function(){
 				polymerElement.$.getBoard.go();
@@ -106,46 +96,33 @@
 			createDialogOnClose:function(){
 				polymerElement.$.getBoard.go();
 			},
-			createStory:function(e){
-				root.getElementById('createStory').showDialog();
-			},
-			editStory:function(e){
-				console.log("Edit Story");
-				/*var editElem = document.createElement('kanban-edit');
-				
-				var storyElem = findParentBySelector(root,e.target, ".story");
-				editElem.setAttribute("storyID", storyElem.dataset.id);
-				editElem.setAttribute("on-close", "{{editDialogOnClose}}");
-				storyElem.appendChild(editElem);*/
-				console.log(e.target);
-				console.log(polymerElement.$.test);
-				var storyElem = findParentBySelector(root,e.target, ".story");
-				root.getElementById('edit-'+storyElem.dataset.id).showDialog();
-				//polymerElement.$.test.showDialog();
+			createTile:function(e){
+				boardRoot.getElementById('createTile').showDialog();
 			},
 			ready:function(){
 				//Track Start
-				root = this.shadowRoot;
+				boardRoot = this.shadowRoot;
 				polymerElement = this;
 				
-				//Create event listener for changing story state
+				//Create event listener for changing tile queue
 				addEventListener('drag-start', function(e) {
+					console.log(this);
 				  var dragInfo = e.detail;
 				  var movingElement = null;
-				  if(hasClass(dragInfo.event.target,"story"))
+				  if(hasClass(dragInfo.event.target,"tile"))
 				  {
 					movingElement = dragInfo.event.target;
 				  }
 				  else
 				  {
-					movingElement = findParentBySelector(root,dragInfo.event.target, ".story");
+					movingElement = findParentBySelector(this.shadowRoot,dragInfo.event.target, ".tile"); //dragInfo.event.target.parentNode;//
 				  }
 				  
 				  
-				  polymerElement.updateStoryID = movingElement.dataset.id;
+				  polymerElement.updateTileID = movingElement.dataset.id;
 				  e.detail.avatar.innerHTML = "";
 				  e.detail.avatar.appendChild(movingElement);
-				  dragInfo.avatar.style.cssText = 'display:block; background-color:white; width:260px;';
+				  //dragInfo.avatar.style.cssText = 'display:block; background-color:white; width:260px;';
 
 				  
 				  
@@ -156,35 +133,32 @@
 				  dragInfo.drop = function(dragInfo) 
 				  {
 					console.log("Drag Stop");
-					
+					var test = root.querySelectorAll("div");
 					var dropTarget = dragInfo.event.relatedTarget;
 					console.log(dropTarget);
-					var stateList = findParentBySelector(root,dropTarget, ".list");
+					var queueList = findParentBySelector(this.shadowRoot,dropTarget, ".list");
 					if(hasClass(dropTarget,"list"))
 					{
-						stateList = dropTarget
+						queueList = dropTarget
 					}
 					
-					//If dropped in state column update story
-					if(stateList != null)
+					//If dropped in queue column update tile
+					if(queueList != null)
 					{
-						polymerElement.updateStoryState = stateList.dataset.state;
-						polymerElement.updateStoryEpicID = stateList.dataset.epic;
-						console.log(polymerElement.updateStoryID);
-						console.log(polymerElement.updateStoryState);
-						console.log(polymerElement.updateStoryEpicID);
-						polymerElement.$.updateStory.go();
+						polymerElement.updateTileQueueID = queueList.dataset.queueid;
+						polymerElement.updateTileSwimlaneID = queueList.dataset.swimlaneid;
+						polymerElement.$.updateTile.go();
 					}
 					else
 					{
 						polymerElement.$.getBoard.go();
 					}
 					
-				  };
-				});
+				  }.bind(this);
+				}.bind(this));
 
 			},
-			storyUpdated: function(event, response) {
+			tileUpdated: function(event, response) {
 				polymerElement.$.getBoard.go();
 			},
 			domReady:function(){

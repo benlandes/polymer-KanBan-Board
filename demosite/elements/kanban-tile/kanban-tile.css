@@ -1,0 +1,65 @@
+paper-progress::shadow #activeProgress {
+	background-color:#4285f4;
+}
+.status-ok, .status-warning, .status-at_risk
+{
+	float:left;
+	width:10px;
+	height:60px;
+	margin-right:4px;
+}
+.status-ok
+{
+	background-color:green;
+}
+.status-warning
+{
+	background-color:yellow;
+}
+.status-at_risk
+{
+	background-color:red;
+}
+h2
+{
+	margin-bottom:4px;
+	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+}
+:host{
+	width:260px;
+	display: block;
+	background-color:white;
+}
+.fab {
+  position: relative;
+  display: block;
+  margin:4px;
+  float:right;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #fff;
+  overflow: hidden;
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: 0.2s;
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+  background-color: #4285f4;
+}
+.fab:active {
+  box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2);
+  transition-delay: 0s;
+}
+.fab paper-button-base {
+	width:30px;
+	height:30px;
+}
+.fab  core-icon {
+	float:left;
+  margin: 6px;
+  width:18px;
+  height:18px;
+}
+
+.fab core-icon::shadow path {
+  fill: #fff;
+}
