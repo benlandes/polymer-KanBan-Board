@@ -68,7 +68,6 @@
 
 	</template>
 	
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script>
 		function collectionHas(a, b) { //helper function (see below)
 			for(var i = 0, len = a.length; i < len; i ++) {
@@ -90,10 +89,10 @@
 		Polymer('kanban-board',{
 			movingTileHTML:null,
 			polymerElement:null,
-			editDialogOnClose:function(){
+			editDialogOnClose:function(e){
 				polymerElement.$.getBoard.go();
 			},
-			createDialogOnClose:function(){
+			createDialogOnClose:function(e){
 				polymerElement.$.getBoard.go();
 			},
 			createTile:function(e){

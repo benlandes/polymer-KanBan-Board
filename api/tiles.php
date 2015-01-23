@@ -123,7 +123,7 @@
 		
 		//Retrieve from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, sprint_id, summary, size, ".
+		$queryResult = $db->query("SELECT id, sprint_id, summary, size, percent_done, ".
 									"description, queue_id, swimlane_id FROM tiles ".
 									"WHERE id = ".$db->quote($params["id"]));
 		
@@ -153,7 +153,7 @@
 		
 		//Check required parameters
 		$required = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
-						"percent_done","status","assigned");
+						"percent_done","color_id","assigned");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
@@ -167,17 +167,17 @@
 		}
 		
 		if($db->query("SELECT COUNT(*) FROM queues ".
-			"WHERE `column` = ".$db->quote($params["queue_id"]))->fetchColumn() == 0)
+			"WHERE id = ".$db->quote($params["queue_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
 			return array("error"=>"No queue exists for queue_id");
 		}
 		
-		if($db->query("SELECT COUNT(*) FROM status ".
-			"WHERE id = ".$db->quote($params["status"]))->fetchColumn() == 0)
+		if($db->query("SELECT COUNT(*) FROM colors ".
+			"WHERE id = ".$db->quote($params["color_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"Incorrect value for status parameter");
+			return array("error"=>"Incorrect value for color_id parameter");
 		}
 		
 		if($db->query("SELECT COUNT(*) FROM sizes ".
@@ -210,11 +210,11 @@
 		$id = uniqid();
 		
 		$db->query("INSERT INTO tiles (id, swimlane_id, summary, size, description".
-					", swimlane_id, percent_done, sprint_id, status) VALUES ('$id',".$db->quote($params["swimlane_id"]).",".
+					", queue_id, percent_done, sprint_id, color_id) VALUES ('$id',".$db->quote($params["swimlane_id"]).",".
 					$db->quote($params["summary"]).",".$db->quote($params["size"]).",".
-					$db->quote($params["description"]).",".intval($params["queue_id"]).",".
+					$db->quote($params["description"]).",".$db->quote($params["queue_id"]).",".
 					$db->quote($params["percent_done"]).",".$db->quote($params["sprint_id"]).",".
-					$db->quote($params["status"]).")");
+					$db->quote($params["color_id"]).")");
 		
 		//Order of tile will be last
 		updateTileOrder($id, -1);

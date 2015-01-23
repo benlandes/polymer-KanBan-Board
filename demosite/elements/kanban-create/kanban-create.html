@@ -13,6 +13,30 @@
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../bower_components/core-icons/core-icons.html">
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+  
+<polymer-element name="x-trigger" extends="paper-icon-button" relative on-tap="{{toggle}}" noink>
+  <template>
+	<style>
+		:host{
+			font-size:16px !important;
+			font-weight:normal !important;
+			padding-bottom:0px !important;
+		}
+	</style>
+    <shadow></shadow>
+    <content></content>
+  </template>
+  <script>
+    Polymer({
+      toggle: function() {
+        if (!this.dropdown) {
+          this.dropdown = this.querySelector('paper-dropdown');
+        }
+        this.dropdown && this.dropdown.toggle();
+      }
+    });
+  </script>
+</polymer-element>
 
 <polymer-element name="kanban-create">
 	<core-style id="x-dialog">
@@ -36,6 +60,8 @@
 		h1 {
 			clear: both;
 		}
+
+
 	</style>
 	<paper-dialog autoCloseDisabled id="createDialog" >
 		<h1>Create Tile</h1>
@@ -91,7 +117,7 @@
 			<paper-dropdown class="dropdown">
 				<core-menu class="menu" selectedItem="{{selectedQueue}}">
 					<template repeat="{{queue in queuesResponse}}">
-						<paper-item label="{{queue.column}}" >{{queue.name}}</paper-item>
+						<paper-item label="{{queue.id}}" >{{queue.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
@@ -108,19 +134,38 @@
 			</paper-dropdown>
 		</paper-dropdown-menu>
 		<br/> 
-		<h2>Assignees</h2>
+		<h2>Assignees
+		<span id="assigneeOps">
 		
-		<x-trigger icon="add">
-			<paper-dropdown class="no-padding">
+		<x-trigger id="addAssignee" icon="add">
+			<paper-dropdown valign="bottom" halign="right" class="no-padding">
 			  <div class="menu">
 				<template repeat="{{user in usersResponse}}">
-					<paper-item label="{{user.id}}" >{{user.first_name}} {{user.last_name}}</paper-item>
+					<paper-item data-userid="{{user.id}}" on-click="{{addAssignee}}">{{user.first_name}} {{user.last_name}}</paper-item>
 				</template>
 			  </div>
 			</paper-dropdown>
 		  </x-trigger>
-	  
-		<p>{{assignees | join}}</p>
+		  <x-trigger id="removeAssignee" icon="clear">
+			<paper-dropdown valign="bottom" class="no-padding">
+			  <div class="menu">
+				
+				<template repeat="{{user in assignees}}">
+					<paper-item data-userid="{{user.id}}" on-click="{{removeAssignee}}" >{{user.first_name}} {{user.last_name}}</paper-item>
+				</template>
+
+				<template if="{{assignees.length == 0}}">
+					<paper-item disabled>No one is assigned</paper-item>
+				</template>
+				
+			  </div>
+			</paper-dropdown>
+		  </x-trigger>
+		</span>
+		</h2>
+		
+		<p>{{assignees | joinNames}}</p>
+		<p>{{test}}
 		<br/>
 		<!--<p>{{percentDone}}</p>
 		<p>{{summary}}</p>
@@ -147,10 +192,10 @@
 				"percent_done":"{{percentDone}}",
 				"color_id":"{{selectedColor.attributes.label.textContent}}",
 				"swimlane_id":"{{selectedSwimlane.attributes.label.textContent}}",
-				"assignees":"{{assignees | join}}"}'
+				"assigned":"{{assignees | joinIDs}}"}'
 		handleAs="json"
 		method="POST"
-		on-core-response="{createCompleted}}"
+		on-core-response="{{createCompleted}}"
 		></core-ajax>
 		
 	<!-- Get Color List -->
@@ -205,53 +250,92 @@
   
   <script>
     Polymer('kanban-create',{
-		test:"Hello",
-		assignees:[
-      'Apple fritter',
-      'Croissant',
-      'Donut',
-      'Financier',
-      'Jello',
-      'Madeleine',
-      'Pound cake',
-      'Pretzel',
-      'Sfogliatelle'
-    ],
+		assignees:[],
+		renderAssignOp:true,
+		removeAssigned: function(value){
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					createElement.assignees.forEach(function(AssignedUser) {
+						if(user.id == assignedUser.id){
+							return true;
+						}
+						returnArray.push(user);
+					});
+				});
+				return returnArray.join();
+			}
+			else
+			{
+				return new Array();
+			}
+		},
 		join: function(value){
 			return value.join();
 		},
+		length: function(value){
+			return value.length;
+		},
 		joinIDs: function(value){
-			var returnArray = new Array();
-			value.forEach(function(user) {
-				returnArray.push(user.id);
-			});
-			return returnArray.join();
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					returnArray.push(user.id);
+				});
+				return returnArray.join();
+			}
+			else
+			{
+				return "";
+			}
 		},
 		joinNames: function(value){
-			var returnArray = new Array();
-			value.forEach(function(user) {
-				returnArray.push(user.first_name + " " + user.last_name);
-			});
-			return returnArray.join();
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					returnArray.push(user.first_name + " " + user.last_name);
+				});
+				return returnArray.join();
+			}
+			else
+			{
+				return "";
+			}
 		},
 		ready: function() {
+			createElement = this;
+		},
+		addAssignee:function(e){
+			var userID = e.target.dataset.userid;
 
+			createElement.usersResponse.forEach(function(user) {
+				if(user.id == userID)
+				{
+					createElement.assignees = createElement.assignees.concat(user);
+				}
+			});
+		},
+		removeAssignee:function(e){
+			var userID = e.target.dataset.userid;
+			for(var i = 0; i < createElement.assignees.length; i++){
+				if(createElement.assignees[i].id == userID)
+				{
+					createElement.assignees.splice(i,1);
+					createElement.assignees = createElement.assignees.concat(new Array());
+				}
+			}
 		},
 		showDialog:function() {
 			this.$.createDialog.toggle();
 		},
 		createCompleted: function(event, response) {
             console.log(response);
-			this.$.editDialog.toggle();
+			this.$.createDialog.toggle();
 			this.fire('close');
         },
-		submit: function(){
-			/*var $d = this.shadowRoot.querySelectorAll('paper-input');
-			Array.prototype.forEach.call($d, function(d) {
-			  d.isInvalid = !d.validity.valid;
-			});*/
-			//this.$.createRequest.go();
-		},
 		cancel: function(){
 			this.$.createDialog.toggle();
 			this.fire('close');
