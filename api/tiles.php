@@ -123,7 +123,7 @@
 		
 		//Retrieve from database
 		$db = createDBConnection();
-		$queryResult = $db->query("SELECT id, sprint_id, summary, size, percent_done, ".
+		$queryResult = $db->query("SELECT id, sprint_id, summary, size, percent_done, color_id, ".
 									"description, queue_id, swimlane_id FROM tiles ".
 									"WHERE id = ".$db->quote($params["id"]));
 		
@@ -138,7 +138,7 @@
 		
 		//Get Assignees
 		$assigneeResult = $db->query("SELECT u.id, u.first_name, u.last_name FROM users u ".
-									"JOIN tile_user_match m ON m.tile_id ".
+									"JOIN tile_user_match m ON m.user_id = u.id ".
 									"WHERE m.tile_id = ".$db->quote($params["id"]));
 		$result["assignees"] = $assigneeResult->fetchAll(PDO::FETCH_ASSOC);
 
@@ -288,7 +288,7 @@
 		
 		//Check against optional fields
 		$optional = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
-				"percent_done","status");
+				"percent_done","status","color_id");
 		foreach($params as $key => $value)
 		{
 			if(in_array($key,$optional) === false)

@@ -165,7 +165,7 @@
 		</h2>
 		
 		<p>{{assignees | joinNames}}</p>
-		<p>{{test}}
+
 		<br/>
 		<!--<p>{{percentDone}}</p>
 		<p>{{summary}}</p>
@@ -251,7 +251,6 @@
   <script>
     Polymer('kanban-create',{
 		assignees:[],
-		renderAssignOp:true,
 		removeAssigned: function(value){
 			if(typeof value != "undefined")
 			{

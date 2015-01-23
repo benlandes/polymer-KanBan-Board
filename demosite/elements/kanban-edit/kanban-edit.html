@@ -12,7 +12,7 @@
 <link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
 
-<polymer-element name="kanban-edit" attributes="storyID onClose" >
+<polymer-element name="kanban-edit" attributes="tileID onClose" >
 	<core-style id="x-dialog">
 	  html /deep/ #editDialog::shadow #scroller {
 		width: 800px;
@@ -39,25 +39,25 @@
 		}
 	</style>
 	<paper-dialog autoCloseDisabled id="editDialog">
-		<h1>Edit Story</h1>
+		<h1>Edit Tile</h1>
 	
-		<paper-input label="Summary" floatingLabel=true value="{{story.summary}}" required></paper-input>
+		<paper-input label="Summary" floatingLabel=true value="{{tile.summary}}" required></paper-input>
 		<br/>
 		
 		<paper-input-decorator label="Description" floatingLabel>
 		  <paper-autogrow-textarea>
-			<textarea value="{{story.description}}"></textarea>
+			<textarea value="{{tile.description}}"></textarea>
 		  </paper-autogrow-textarea>
 		</paper-input-decorator>
 		
 		<label>Percent Done</label>
 		<br/>
-		<paper-slider value={{story.percent_done}} editable></paper-slider>
+		<paper-slider value={{tile.percent_done}} editable></paper-slider>
 		<br/>
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.size}}" valueattr="label">
+				<core-menu class="menu" selected="{{tile.size}}" valueattr="label">
 					<template repeat="{{size in sizesResponse}}">
 						<paper-item label="{{size.value}}">{{size.value}}</paper-item>
 					</template>
@@ -68,9 +68,9 @@
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.epic_id}}" valueattr="label"">
-					<template repeat="{{epic in epicsResponse}}">
-						<paper-item label="{{epic.id}}">{{epic.name}}</paper-item>
+				<core-menu class="menu" selected="{{tile.swimlane_id}}" valueattr="label"">
+					<template repeat="{{swimlane in swimlanesResponse}}">
+						<paper-item label="{{swimlane.id}}">{{swimlane.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
@@ -79,7 +79,7 @@
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.sprint_id}}" valueattr="label"">
+				<core-menu class="menu" selected="{{tile.sprint_id}}" valueattr="label"">
 					<template repeat="{{sprint in sprintsResponse}}">
 						<paper-item label="{{sprint.id}}" >{{sprint.name}}</paper-item>
 					</template>
@@ -90,9 +90,9 @@
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.state}}" valueattr="label">
-					<template repeat="{{state in statesResponse}}">
-						<paper-item label="{{state.column}}" >{{state.name}}</paper-item>
+				<core-menu class="menu" selected="{{tile.queue_id}}" valueattr="label">
+					<template repeat="{{queue in queuesResponse}}">
+						<paper-item label="{{queue.id}}" >{{queue.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
@@ -101,53 +101,84 @@
 		
 		<paper-dropdown-menu>
 			<paper-dropdown class="dropdown">
-				<core-menu class="menu" selected="{{story.color_id}}" valueattr="label">
+				<core-menu class="menu" selected="{{tile.color_id}}" valueattr="label">
 					<template repeat="{{color in colorsResponse}}">
-						<paper-item label="{{color.id}}" >{{status.name}}</paper-item>
+						<paper-item label="{{color.id}}" >{{color.name}}</paper-item>
 					</template>
 				</core-menu>
 			</paper-dropdown>
 		</paper-dropdown-menu>
 		<br/> 
+		<h2>Assignees
+		<span id="assigneeOps">
 		
+		<x-trigger id="addAssignee" icon="add">
+			<paper-dropdown valign="bottom" halign="right" class="no-padding">
+			  <div class="menu">
+				<template repeat="{{user in usersResponse}}">
+					<paper-item data-userid="{{user.id}}" on-click="{{addAssignee}}">{{user.first_name}} {{user.last_name}}</paper-item>
+				</template>
+			  </div>
+			</paper-dropdown>
+		  </x-trigger>
+		  <x-trigger id="removeAssignee" icon="clear">
+			<paper-dropdown valign="bottom" class="no-padding">
+			  <div class="menu">
+				
+				<template repeat="{{user in tile.assignees}}">
+					<paper-item data-userid="{{user.id}}" on-click="{{removeAssignee}}" >{{user.first_name}} {{user.last_name}}</paper-item>
+				</template>
+
+				<template if="{{tile.assignees.length == 0}}">
+					<paper-item disabled>No one is assigned</paper-item>
+				</template>
+				
+			  </div>
+			</paper-dropdown>
+		  </x-trigger>
+		</span>
+		</h2>
+		
+		<p>{{tile.assignees | joinNames}}</p>
 		<br/>
-		<!--<p>{{story.sprint_id}}</p>
-		<p>{{story.epic_id}}</p>
-		<p>{{story.percent_done}}</p>
-		<p>{{story.summary}}</p>
-		<p>{{story.description}}</p>
-		<p>{{story.size}}</p>
-		<p>{{story.status}}</p>
-		<p>{{story.state}}</p>-->
+		<!--<p>{{tile.sprint_id}}</p>
+		<p>{{tile.swimlane_id}}</p>
+		<p>{{tile.percent_done}}</p>
+		<p>{{tile.summary}}</p>
+		<p>{{tile.description}}</p>
+		<p>{{tile.size}}</p>
+		<p>{{tile.color}}</p>
+		<p>{{tile.queue}}</p>-->
 		
 		<paper-button dismissive id="cancel" on-click="{{cancel}}">Cancel</paper-button>
 		<paper-button affirmative autofocus id="save" on-click="{{save}}">Save Edits</paper-button>
 		
 		
 	</paper-dialog>
-	<!-- Get Story -->
+	<!-- Get Tile -->
 		<core-ajax
 			  auto
-			  url="http://api.kanbanboard.local/stories.php"
-			  params='{"id":"{{storyID}}"}'
-			  response="{{story}}"
-			  on-core-response="{{storyResponse}}"
+			  url="http://api.kanbanboard.local/tiles.php"
+			  params='{"id":"{{tileID}}"}'
+			  response="{{tile}}"
+			  on-core-response="{{tileResponse}}"
 			  handleAs="json"
 			  ></core-ajax>
 		
-		<!-- Create Story -->
+		<!-- Create Tile -->
 		 <core-ajax 
 			id="editRequest" 
-			url="http://api.kanbanboard.local/stories.php" 
-			params='{"id":"{{storyID}}",
-					"summary":"{{story.summary}}", 
-					"sprint_id":"{{story.sprint_id}}",
-					"size":"{{story.size}}",
-					"description":"{{story.description}}",
-					"state":"{{story.state}}",
-					"percent_done":"{{story.percent_done}}",
-					"status":"{{story.status}}",
-					"epic_id":"{{story.epic_id}}"}'
+			url="http://api.kanbanboard.local/tiles.php" 
+			params='{"id":"{{tileID}}",
+					"summary":"{{tile.summary}}", 
+					"sprint_id":"{{tile.sprint_id}}",
+					"size":"{{tile.size}}",
+					"description":"{{tile.description}}",
+					"queue_id":"{{tile.queue_id}}",
+					"percent_done":"{{tile.percent_done}}",
+					"color_id":"{{tile.color_id}}",
+					"swimlane_id":"{{tile.swimlane_id}}"}',
+					"assignees":"{{tile.assignees | joinIDs}}"}'
 			handleAs="json"
 			method="PUT"
 			on-core-response="{{editCompleted}}"
@@ -169,11 +200,11 @@
 			  handleAs="json"
 			  ></core-ajax>
 			  
-		<!-- Get Epic List -->
+		<!-- Get Swimlane List -->
 		<core-ajax
 			  auto
-			  url="http://api.kanbanboard.local/epics.php"
-			  response="{{epicsResponse}}"
+			  url="http://api.kanbanboard.local/swimlanes.php"
+			  response="{{swimlanesResponse}}"
 			  handleAs="json"
 			  ></core-ajax>
 			  
@@ -193,11 +224,11 @@
 			  handleAs="json"
 			  ></core-ajax>
 		
-		<!-- Get States List -->
+		<!-- Get Queues List -->
 		<core-ajax
 			  auto
-			  url="http://api.kanbanboard.local/states.php"
-			  response="{{statesResponse}}"
+			  url="http://api.kanbanboard.local/queues.php"
+			  response="{{queuesResponse}}"
 			  handleAs="json"
 			  ></core-ajax>
   </template>
@@ -205,6 +236,61 @@
   <script>
     Polymer('kanban-edit',{
 		ready: function() {
+			editElement = this;
+		},
+		join: function(value){
+			return value.join();
+		},
+		length: function(value){
+			return value.length;
+		},
+		joinIDs: function(value){
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					returnArray.push(user.id);
+				});
+				return returnArray.join();
+			}
+			else
+			{
+				return "";
+			}
+		},
+		joinNames: function(value){
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					returnArray.push(user.first_name + " " + user.last_name);
+				});
+				return returnArray.join(", ");
+			}
+			else
+			{
+				return "";
+			}
+		},
+		addAssignee:function(e){
+			var userID = e.target.dataset.userid;
+
+			editElement.usersResponse.forEach(function(user) {
+				if(user.id == userID)
+				{
+					editElement.tile.assignees = editElement.tile.assignees.concat(user);
+				}
+			});
+		},
+		removeAssignee:function(e){
+			var userID = e.target.dataset.userid;
+			for(var i = 0; i < editElement.tile.assignees.length; i++){
+				if(editElement.tile.assignees[i].id == userID)
+				{
+					editElement.tile.assignees.splice(i,1);
+					editElement.tile.assignees = editElement.tile.assignees.concat(new Array());
+				}
+			}
 		},
 		showDialog:function() {
 			this.$.editDialog.toggle();
@@ -214,7 +300,7 @@
 			this.$.editDialog.toggle();
 			this.fire('close');
         },
-		storyResponse: function(event, response) {
+		tileResponse: function(event, response) {
             console.log(response);
 			
 			

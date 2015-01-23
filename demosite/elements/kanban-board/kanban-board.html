@@ -132,7 +132,6 @@
 				  dragInfo.drop = function(dragInfo) 
 				  {
 					console.log("Drag Stop");
-					var test = root.querySelectorAll("div");
 					var dropTarget = dragInfo.event.relatedTarget;
 					console.log(dropTarget);
 					var queueList = findParentBySelector(this.shadowRoot,dropTarget, ".list");

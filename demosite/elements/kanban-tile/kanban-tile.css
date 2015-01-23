@@ -1,24 +1,24 @@
 paper-progress::shadow #activeProgress {
 	background-color:#4285f4;
 }
-.status-ok, .status-warning, .status-at_risk
+.status-defect, .status-important, .status-unplanned
 {
 	float:left;
 	width:10px;
 	height:60px;
 	margin-right:4px;
 }
-.status-ok
+.status-defect
 {
-	background-color:green;
+	background-color:blue;
 }
-.status-warning
-{
-	background-color:yellow;
-}
-.status-at_risk
+.status-important
 {
 	background-color:red;
+}
+.status-unplanned
+{
+	background-color:yellow;
 }
 h2
 {

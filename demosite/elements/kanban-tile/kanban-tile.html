@@ -22,12 +22,14 @@
 	<div class="fab">
 		<paper-button-base on-click="{{editTile}}">
 			<core-icon icon="settings"></core-icon>
-			<!--<kanban-edit id="edit-{{tile.id}}" tileID="{{tile.id}}" on-close="{{editDialogOnClose}}"></kanban-edit>-->
+			<kanban-edit id="edit" tileID="{{tileID}}" on-close="{{editDialogOnClose}}"></kanban-edit>
 		</paper-button-base>
 		
 	</div>
 	<h2>{{tile.summary}} - {{tile.size}}</h2>
 	<paper-progress value="{{tile.percent_done}}"></paper-progress>
+	
+	<p>{{tile.assignees | joinNames}}</p>
 	
 		<!-- Get Tile -->
 		<core-ajax
@@ -44,17 +46,26 @@
   
   <script>
     Polymer('kanban-tile',{
-		root:null, //For storing shadowroot since events cannot access it through this.shadowRoot
 		ready: function() {
-			root = this.shadowRoot;
+			tileElement = this;
 		},
 		editTile:function(e){
-			console.log("Edit Tile");
-			console.log(e.target);
-			console.log(polymerElement.$.test);
-			var tileElem = findParentBySelector(root,e.target, ".tile");
-			root.getElementById('edit-'+tileElem.dataset.id).showDialog();
-		}
+			tileElement.shadowRoot.getElementById('edit').showDialog();
+		},
+		joinNames: function(value){
+			if(typeof value != "undefined")
+			{
+				var returnArray = new Array();
+				value.forEach(function(user) {
+					returnArray.push(user.first_name + " " + user.last_name);
+				});
+				return returnArray.join(", ");
+			}
+			else
+			{
+				return "";
+			}
+		},
     });
 	
   
