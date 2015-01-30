@@ -18,18 +18,20 @@
 	<style>
 
 	</style>
-	<div class="status-{{tile.color_id}}"></div>
-	<div class="fab">
-		<paper-button-base on-click="{{editTile}}">
-			<core-icon icon="settings"></core-icon>
-			<kanban-edit id="edit" tileID="{{tileID}}" on-close="{{editDialogOnClose}}"></kanban-edit>
-		</paper-button-base>
+	<div id="container">
+		<div class="status-{{tile.color_id}}"></div>
+		<div class="fab">
+			<paper-button-base on-click="{{editTile}}">
+				<core-icon icon="settings"></core-icon>
+				<kanban-edit id="edit" tileID="{{tileID}}" on-close="{{editDialogOnClose}}"></kanban-edit>
+			</paper-button-base>
+			
+		</div>
+		<h2>{{tile.summary}} - {{tile.size}}</h2>
+		<paper-progress value="{{tile.percent_done}}"></paper-progress>
 		
+		<p>{{tile.assignees | joinNames}}</p>
 	</div>
-	<h2>{{tile.summary}} - {{tile.size}}</h2>
-	<paper-progress value="{{tile.percent_done}}"></paper-progress>
-	
-	<p>{{tile.assignees | joinNames}}</p>
 	
 		<!-- Get Tile -->
 		<core-ajax

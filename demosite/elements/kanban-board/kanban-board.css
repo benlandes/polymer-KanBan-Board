@@ -9,6 +9,7 @@
 	clear:both;
 	
 }
+
 h1{
 	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
 }
@@ -20,9 +21,6 @@ h2
 .list > h1
 {
 	margin:5px;
-
-}
-.tile > h2{
 
 }
 /*paper-progress::shadow #activeProgress {
@@ -68,7 +66,6 @@ h2
 .taskList  li
 {
 	display:block;
-	background-color:white;
 	overflow:hidden;
 	margin-bottom:6px;
 }

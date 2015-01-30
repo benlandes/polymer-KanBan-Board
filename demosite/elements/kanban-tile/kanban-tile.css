@@ -5,7 +5,7 @@ paper-progress::shadow #activeProgress {
 {
 	float:left;
 	width:10px;
-	height:60px;
+	height:50px;
 	margin-right:4px;
 }
 .status-defect
@@ -25,10 +25,18 @@ h2
 	margin-bottom:4px;
 	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
 }
+p
+{
+	font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+}
+#container{
+	
+}
 :host{
 	width:260px;
 	display: block;
 	background-color:white;
+	
 }
 .fab {
   position: relative;
