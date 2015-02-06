@@ -130,14 +130,31 @@
 		$result["queues"] = $queuesResult->fetchAll(PDO::FETCH_ASSOC);
 		
 		//Get tiles
-		$tilesResult = $db->query("SELECT t.id, t.sprint_id, t.summary, t.size, ".
-									"t.description, t.queue_id, t.swimlane_id ".
+		$tilesResult = $db->query("SELECT t.id, t.sprint_id, t.summary, t.size, t.percent_done, ".
+									"t.color_id, t.description, t.queue_id, t.swimlane_id ".
 									"FROM tiles t ".
 									"JOIN swimlanes s ON s.id = t.swimlane_id ".
 									"JOIN board_swimlane_match m ON m.swimlane_id = s.id ".
+									"JOIN `order` o ON o.tile_id = t.id ".
 									"WHERE m.board_id = ".$db->quote($params["id"])." AND ".
-									"t.sprint_id = ".$db->quote($params["sprint_id"]));
+									"t.sprint_id = ".$db->quote($params["sprint_id"])." ".
+									"ORDER BY o.order ASC");
 		$result["tiles"] = $tilesResult->fetchAll(PDO::FETCH_ASSOC);
+		
+		foreach($result["tiles"] as &$tile){
+		
+			//Get Assignees
+			$assigneeResult = $db->query("SELECT u.id, u.first_name, u.last_name FROM users u ".
+										"JOIN tile_user_match m ON m.user_id = u.id ".
+										"WHERE m.tile_id = ".$db->quote($tile["id"]));
+			$tile["assignees"] = $assigneeResult->fetchAll(PDO::FETCH_ASSOC);
+			
+			//Get Icons
+			$iconsResult = $db->query("SELECT i.id, i.name, i.icon_name FROM icons i ".
+									"JOIN tile_icon_match m ON m.icon_id = i.id ".
+									"WHERE m.tile_id = ".$db->quote($params["id"]));
+			$tile["icons"] = $iconsResult->fetchAll(PDO::FETCH_ASSOC);
+		}
 		
 		return $result;
 	}

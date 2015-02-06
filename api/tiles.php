@@ -3,6 +3,7 @@
 	//Headers allow cross-domain ajax calls
 	header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 	header("Access-Control-Allow-Origin: *");
+	header("Access-Control-Allow-Headers: content-type");
 	header("Content-Type: application/json");
 	
 	//MySQL Database Credentials
@@ -36,7 +37,7 @@
 		parse_str(file_get_contents('php://input'), $_DELETE);
 		$returnValue = deleteTile($_DELETE);
 	}
-	else{ //GET
+	else if($_SERVER['REQUEST_METHOD'] === 'GET'){ //GET
 		//If a specific id is set get that tile otherwise get all
 		if(isset($_GET["id"]))
 		{
@@ -51,7 +52,10 @@
 			$returnValue = getTileList($_GET);
 		}
 	}
-	print(json_encode($returnValue));
+	if(isset($returnValue))
+	{
+		print(json_encode($returnValue));
+	}
 	
 	//Shared method that creates a connection to the MySQL database
 	function createDBConnection()
@@ -153,7 +157,7 @@
 		
 		//Check required parameters
 		$required = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
-						"percent_done","color_id","assigned");
+						"percent_done","color_id","assignees");
 		$checkResult = checkParams($params, $required);
 		if(isset($checkResult["error"])) return $checkResult;
 		
@@ -187,7 +191,7 @@
 			return array("error"=>"Incorrect value for size parameter");
 		}
 		
-		$assignees = explode(",",preg_replace('/\s+/', '', $params["assigned"]));
+		$assignees = array_unique(explode(",",preg_replace('/\s+/', '', $params["assignees"])));
 		foreach($assignees as $index => $assignee)
 		{
 			if($assignee != "")
@@ -205,6 +209,24 @@
 			}
 		}
 		
+		$icons = array_unique(explode(",",preg_replace('/\s+/', '', $params["icons"])));
+		foreach($icons as $index => $icon)
+		{
+			if($icon != "")
+			{
+				if($db->query("SELECT COUNT(*) FROM icons ".
+				"WHERE id = ".$db->quote($icons))->fetchColumn() == 0)
+				{
+					setHeaderStatus(400);
+					return array("error"=>"No icon with id '$icons'");
+				}
+			}
+			else
+			{
+				unset($icons[$index]);
+			}
+		}
+		
 		//Add entry to database
 		$db = createDBConnection();
 		$id = uniqid();
@@ -219,10 +241,16 @@
 		//Order of tile will be last
 		updateTileOrder($id, -1);
 		
-		//Add assigned users
+		//Add assignees
 		foreach($assignees as $assignee)
 		{
 			$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+		}
+		
+		//Add icons
+		foreach($icons as $icon)
+		{
+			$db->query("INSERT INTO tile_icon_match (tile_id, icon_id) VALUES ('$id',".$db->quote($icon).")");
 		}
 		
 		//return create success
@@ -288,7 +316,7 @@
 		
 		//Check against optional fields
 		$optional = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
-				"percent_done","status","color_id");
+				"percent_done","color_id", "icons","order");
 		foreach($params as $key => $value)
 		{
 			if(in_array($key,$optional) === false)
@@ -312,11 +340,11 @@
 			setHeaderStatus(400);
 			return array("error"=>"No queue exists for queue_id");
 		}
-		if(isset($params["status"]) && $db->query("SELECT COUNT(*) FROM status ".
-			"WHERE id = ".$db->quote($params["status"]))->fetchColumn() == 0)
+		if(isset($params["color_id"]) && $db->query("SELECT COUNT(*) FROM colors ".
+			"WHERE id = ".$db->quote($params["color_id"]))->fetchColumn() == 0)
 		{
 			setHeaderStatus(400);
-			return array("error"=>"Incorrect value for status parameter");
+			return array("error"=>"Incorrect value for color_id parameter");
 		}
 		if(isset($params["size"]) && $db->query("SELECT COUNT(*) FROM sizes ".
 			"WHERE value = ".$db->quote($params["size"]))->fetchColumn() == 0)
@@ -325,9 +353,9 @@
 			return array("error"=>"Incorrect value for size parameter");
 		}
 		
-		if(isset($params["assigned"]))
+		if(isset($params["assignees"]))
 		{
-			$assignees = explode(",",preg_replace('/\s+/', '', $params["assigned"]));
+			$assignees = array_unique(explode(",",preg_replace('/\s+/', '', $params["assignees"])));
 			foreach($assignees as $index => $assignee)
 			{
 				if($assignee != "")
@@ -346,6 +374,32 @@
 			}
 		}
 		
+		if(isset($params["icons"]))
+		{
+			$icons = array_unique(explode(",",preg_replace('/\s+/', '', $params["icons"])));
+			foreach($icons as $index => $icon)
+			{
+				if($icon != "")
+				{
+					if($db->query("SELECT COUNT(*) FROM icons ".
+					"WHERE id = ".$db->quote($icons))->fetchColumn() == 0)
+					{
+						setHeaderStatus(400);
+						return array("error"=>"No icon with id '$icons'");
+					}
+				}
+				else
+				{
+					unset($icons[$index]);
+				}
+			}
+		}
+		if(isset($params["order"]))
+		{
+			$order = $params["order"];
+			unset($params["order"]);
+		}
+		
 		
 		//Check if tile exists
 		if($db->query("SELECT COUNT(*) FROM tiles WHERE id = ".$db->quote($id))->fetchColumn() == 0)
@@ -360,8 +414,8 @@
 			$db->query("UPDATE tiles SET $key = ".$db->quote($value)." WHERE id = ".$db->quote($id));
 		}
 		
-		//Update assigned
-		if(isset($params["assigned"]))
+		//Update assignees
+		if(isset($params["assignees"]))
 		{
 			$db->query("DELETE FROM tile_user_match WHERE tile_id = ".$db->quote($params["id"]));
 			foreach($assignees as $assignee)
@@ -370,9 +424,24 @@
 			}
 		}
 		
+		//Update icons
+		if(isset($params["icons"]))
+		{
+			$db->query("DELETE FROM tile_icon_match WHERE tile_id = ".$db->quote($params["id"]));
+			foreach($assignees as $assignee)
+			{
+				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+			}
+		}
+		
 		//Update tile order
-		updateTileOrder($id,-1);
-
+		if(isset($order))
+		{
+			updateTileOrder($id,intval($order));
+		}else{
+			updateTileOrder($id,-1);
+		}
+		
 		//return update success
 		return array("status" => "Entry Updated");
 	}
@@ -399,6 +468,5 @@
 		
 		//return delete success
 		return array("status" => "Tile Deleted");
-		
 	}
 ?>
