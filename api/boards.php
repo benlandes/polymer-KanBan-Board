@@ -152,7 +152,7 @@
 			//Get Icons
 			$iconsResult = $db->query("SELECT i.id, i.name, i.icon_name FROM icons i ".
 									"JOIN tile_icon_match m ON m.icon_id = i.id ".
-									"WHERE m.tile_id = ".$db->quote($params["id"]));
+									"WHERE m.tile_id = ".$db->quote($tile["id"]));
 			$tile["icons"] = $iconsResult->fetchAll(PDO::FETCH_ASSOC);
 		}
 		

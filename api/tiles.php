@@ -215,7 +215,7 @@
 			if($icon != "")
 			{
 				if($db->query("SELECT COUNT(*) FROM icons ".
-				"WHERE id = ".$db->quote($icons))->fetchColumn() == 0)
+				"WHERE id = ".$db->quote($icon))->fetchColumn() == 0)
 				{
 					setHeaderStatus(400);
 					return array("error"=>"No icon with id '$icons'");
@@ -316,7 +316,7 @@
 		
 		//Check against optional fields
 		$optional = array("sprint_id","swimlane_id","queue_id","size","summary", "description",
-				"percent_done","color_id", "icons","order");
+				"percent_done","color_id","assignees", "icons","order");
 		foreach($params as $key => $value)
 		{
 			if(in_array($key,$optional) === false)
@@ -356,6 +356,7 @@
 		if(isset($params["assignees"]))
 		{
 			$assignees = array_unique(explode(",",preg_replace('/\s+/', '', $params["assignees"])));
+			unset($params["assignees"]);
 			foreach($assignees as $index => $assignee)
 			{
 				if($assignee != "")
@@ -377,12 +378,13 @@
 		if(isset($params["icons"]))
 		{
 			$icons = array_unique(explode(",",preg_replace('/\s+/', '', $params["icons"])));
+			unset($params["icons"]);
 			foreach($icons as $index => $icon)
 			{
 				if($icon != "")
 				{
 					if($db->query("SELECT COUNT(*) FROM icons ".
-					"WHERE id = ".$db->quote($icons))->fetchColumn() == 0)
+					"WHERE id = ".$db->quote($icon))->fetchColumn() == 0)
 					{
 						setHeaderStatus(400);
 						return array("error"=>"No icon with id '$icons'");
@@ -402,11 +404,13 @@
 		
 		
 		//Check if tile exists
-		if($db->query("SELECT COUNT(*) FROM tiles WHERE id = ".$db->quote($id))->fetchColumn() == 0)
+		$oldTileResult = $db->query("SELECT swimlane_id, queue_id FROM tiles WHERE id = ".$db->quote($id));
+		if($oldTileResult->rowCount() == 0)
 		{
 			setHeaderStatus(404);
 			return array("error"=>"No tile exists for that id");
 		}
+		$oldTile = $oldTileResult->fetch(PDO::FETCH_ASSOC);
 		
 		//Update Entry
 		foreach($params as $key=>$value)
@@ -415,9 +419,9 @@
 		}
 		
 		//Update assignees
-		if(isset($params["assignees"]))
+		if(isset($assignees))
 		{
-			$db->query("DELETE FROM tile_user_match WHERE tile_id = ".$db->quote($params["id"]));
+			$db->query("DELETE FROM tile_user_match WHERE tile_id = ".$db->quote($id));
 			foreach($assignees as $assignee)
 			{
 				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
@@ -425,12 +429,12 @@
 		}
 		
 		//Update icons
-		if(isset($params["icons"]))
+		if(isset($icons))
 		{
-			$db->query("DELETE FROM tile_icon_match WHERE tile_id = ".$db->quote($params["id"]));
-			foreach($assignees as $assignee)
+			$db->query("DELETE FROM tile_icon_match WHERE tile_id = ".$db->quote($id));
+			foreach($icons as $icon)
 			{
-				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($assignee).")");
+				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($icon).")");
 			}
 		}
 		
@@ -438,7 +442,8 @@
 		if(isset($order))
 		{
 			updateTileOrder($id,intval($order));
-		}else{
+		}else if((isset($params["swimlane_id"]) && $oldTile["swimlane_id"] !=  $params["swimlane_id"] ) || 
+				(isset($params["queue_id"]) && $oldTile["queue_id"] !=  $params["queue_id"] )){
 			updateTileOrder($id,-1);
 		}
 		
