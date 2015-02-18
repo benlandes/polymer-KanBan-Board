@@ -17,7 +17,10 @@
 		<!-- ng sortable -->
 		<script type="text/javascript" src="bower_components/ng-sortable/dist/ng-sortable.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="bower_components/ng-sortable/dist/ng-sortable.min.css">
-
+		
+		<!-- Angular UI Bootstrap -->
+		<script type="text/javascript" src="bootstrap/ui-bootstrap-0.12.0.min.js"></script>
+ 
 		<!-- OPTIONAL: default style -->
 		<link rel="stylesheet" type="text/css" href="bower_components/ng-sortable/dist/ng-sortable.style.min.css">
 
@@ -42,21 +45,31 @@
 						<li data-ng-repeat="tile in queue.tiles"  data-as-sortable-item >
 							<div data-as-sortable-item-handle>
 								<div class="edit-container">
-								<button type="button" ng-click="editTile(tile)" class="btn-link edit"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></button>
+									<button type="button" ng-click="tile.collapsed = !tile.collapsed" class="btn-link" >
+										<span ng-if="tile.collapsed" class="glyphicon glyphicon-collapse-down" aria-hidden="true" ></span>
+										<span ng-if="!tile.collapsed" class="glyphicon glyphicon-collapse-up" aria-hidden="true" ></span>
+									</button>
+									<button type="button" ng-click="editTile(tile)" class="btn-link edit"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span></button>
 								</div>
 								<h3>{{tile.summary}}</h3>
+								<p collapse="tile.collapsed" >
+								{{tile.description}}
+								</p>
+								<div class="attached">
+									<div class="icons">
+										<span ng-repeat="icon in tile.icons" class="glyphicon glyphicon-{{icon.icon_name}}" tooltip="{{icon.name}}"  tooltip-placement="left"></span>
+									</div>
+									<div class="users">
+										<span ng-repeat="assignee in tile.assignees" class="user" tooltip="{{assignee.first_name}} {{assignee.last_name}}"  tooltip-placement="left">{{assignee | initials}}</span> 
+									</div>
+								</div>
 								<div class="progress">
 								  <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="{{tile.percent_done}}" aria-valuemin="0" aria-valuemax="100" style="width: {{tile.percent_done}}%">
 								  </div>
 								</div>
-								<div class="icons">
-									<span ng-repeat="icon in tile.icons" class="glyphicon glyphicon-{{icon.icon_name}}" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{icon.name}}"></span>
-								</div>
-								<div class="users">
-									<span ng-repeat="assignee in tile.assignees" class="user" data-toggle="tooltip" data-placement="top" title="{{assignee.first_name}} {{assignee.last_name}}">{{assignee.first_name | firstLetter}}</span> 
-								</div>
 								
-								<div class="status"></div>
+								
+								<div class="status" style="background-color:{{tile.color.color}};"></div>
 							</div>
 							
 						</li>
@@ -105,7 +118,7 @@
 				 </div>
 				 <div class="form-group">
 					<label for="modalColor">Color</label>
-					<select ng-options="color.id as color.name for color in colors" class="form-control" id="modalColor"  ng-model="modalTile.color_id"></select>
+					<select ng-options="color.id as color.id for color in colors" class="form-control" id="modalColor"  ng-model="modalTile.color_id"></select>
 				 </div>
 				 <div class="form-group">
 					<label for="modalAddAssignee">Asignees</label>

@@ -434,7 +434,7 @@
 			$db->query("DELETE FROM tile_icon_match WHERE tile_id = ".$db->quote($id));
 			foreach($icons as $icon)
 			{
-				$db->query("INSERT INTO tile_user_match (tile_id, user_id) VALUES ('$id',".$db->quote($icon).")");
+				$db->query("INSERT INTO tile_icon_match (tile_id, icon_id) VALUES ('$id',".$db->quote($icon).")");
 			}
 		}
 		

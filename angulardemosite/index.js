@@ -1,12 +1,22 @@
 //Angular js
-var boardApp = angular.module('boardApp', ['ui.sortable']);
+var boardApp = angular.module('boardApp', ['ui.sortable','ui.bootstrap']);
 
 //Returns first letter of string
 boardApp.filter('firstLetter', function() {
   return function(input) {
 	return input.charAt(0);
   };
-})
+});
+
+boardApp.filter('initials', function() {
+  return function(user) {
+	return user.first_name.charAt(0)+user.last_name.charAt(0);
+  };
+});
+
+boardApp.config(['$tooltipProvider', function($tooltipProvider){
+  $tooltipProvider.setTriggers({container:"body"});
+}]);
 
 //Returns array of items in input array that are not in selectedArray
 boardApp.filter('nonSelected', function() {
@@ -38,7 +48,7 @@ boardApp.controller('boardController', function ($scope, $http) {
 	$scope.requestBoard = function(){
 		$http.get("http://api.kanbanboard.local/boards.php?sprint_id=a&id=a")
 		.success(function(response) {
-		
+			
 			//Put response data in format that makes data binding convenient 
 			var swimlanes = response.swimlanes;
 			for(var s = 0; s < swimlanes.length; s++)
@@ -54,8 +64,17 @@ boardApp.controller('boardController', function ($scope, $http) {
 							response.tiles[t]["queue_id"] == swimlanes[s].queues[q]["id"] )
 						{
 							var tiles = swimlanes[s].queues[q]["tiles"];
+							response.tiles[t].collapsed = true;
+							for(var c = 0; c < response.colors.length; c++)
+							{
+								if(response.colors[c].id == response.tiles[t].color_id){
+									response.tiles[t].color = response.colors[c];
+								}
+							}
 							tiles[tiles.length] = $.extend(true, [], response.tiles[t]);
 						}
+						
+						
 					}
 				}
 			}
